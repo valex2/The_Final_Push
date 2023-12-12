@@ -33,7 +33,7 @@ module fpa_vga_driver(
     // new inputs from angelina
 
     input [5:0] current_note, // Current note index
-    input [5:0] prev_note, // Previous note index
+    input [5:0] note_duration, // Previous note index
     input stereo_on, harmonics_on, overtones_on, // Feature flags
 
     output wire [5:0] vga_rgb
