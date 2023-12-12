@@ -246,7 +246,32 @@ vgsadaumodule lab5_top(
         .TMDS_DATA_P(TMDS_Data_p),
         .TMDS_DATA_N(TMDS_Data_n)
     );
-   
+
+    // Display Driver
+    fpa_vga_driver fpa_vga (
+        .clk     (clk_100),
+        .XPos    (x_q),
+        .YPos    (y_q),
+
+	.current_note(current_note),
+	.note_duration(note_duration),
+	.stereo_on(stereo_on),
+	.harmonics_on(harmonics_on),
+	.overtones_on(overtones_on),
+        //.result  (result_q),
+
+        //.Valid   (vde),
+        .Valid   (1'b1),
+
+        .vga_rgb (vga_rgb)
+    );
+ 
+    dff #(.WIDTH (6)) rgb_dff (
+        .clk (clk_100),
+        .d (vga_rgb),
+        .q (rgb_q)
+    );
+
    
 endmodule
 
