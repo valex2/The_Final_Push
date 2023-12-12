@@ -141,7 +141,7 @@ module song_rom (
 	assign memory[	124	] =	{1'b1,6'd25, 6'd26,3'b111};	// Note: 3A
 	assign memory[	125	] =	{1'b0,6'd25, 6'd26,3'b111};	// Note: 3A
 	assign memory[	126	] =	{1'b0,6'd25, 6'd26,3'b111};	// Note: 3A
-	assign memory[	127	] =	{1'b1,6'd0, 6'd4,3'b111};	// Note: rest
+	assign memory[	127	] =	{1'b1,6'd0, 6'd26,3'b111};	// Note: rest
 	assign memory[	128	] =	{1'b0,6'd27, 6'd12,3'b111};	// Note: 3B
 	assign memory[	129	] =	{1'b0,6'd30, 6'd12,3'b111};	// Note: 3D
 	assign memory[	130	] =	{1'b0,6'd35, 6'd12,3'b111};	// Note: 3G
