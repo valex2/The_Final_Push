@@ -14,7 +14,17 @@ module music_player(
     // Our debounced and one-pulsed button inputs.
     input play_button,
     input next_button,
-
+    
+    // Toggle stereo on or off (high -> on, low -> off)
+    input stereo_on,
+    
+    // Toggle Harmonics on or off (high -> on, low -> off)
+    input harmonics,
+    
+    // control harmonic weighting for active instrument editing
+    // 0000 corresponds to all at max volume, 0111 corresponds to fundamental at full, all others half
+    input wire [3:0] overtones,
+    
     // The raw new_frame signal from the ac97_if codec.
     input new_frame,
 
@@ -23,7 +33,8 @@ module music_player(
 
     // Our final output sample to the codec. This needs to be synced to
     // new_frame.
-    output wire [15:0] sample_out
+    output wire [15:0] sample_left,
+    output wire [15:0] sample_right
 );
     // The BEAT_COUNT is parameterized so you can reduce this in simulation.
     // If you reduce this to 100 your simulation will be 10x faster.
@@ -136,13 +147,14 @@ module music_player(
         .reset(reset),
         .play_enable(advance_time),
         .note_to_load(note_1_value),
-        .duration_to_load(note_1_duration),
+        .input_duration(note_1_duration),
         .load_new_note(note_1_load),
         .done_with_note(note_1_done),
         .beat(beat),
         .generate_next_sample(generate_next_sample),
         .sample_out(note_1_sample),
-        .new_sample_ready(note_1_sample_ready)
+        .new_sample_ready(note_1_sample_ready),
+        .overtones(overtones)
     );
     
     wire [15:0] note_2_sample;
@@ -152,13 +164,14 @@ module music_player(
         .reset(reset),
         .play_enable(advance_time),
         .note_to_load(note_2_value),
-        .duration_to_load(note_2_duration),
+        .input_duration(note_2_duration),
         .load_new_note(note_2_load),
         .done_with_note(note_2_done),
         .beat(beat),
         .generate_next_sample(generate_next_sample),
         .sample_out(note_2_sample),
-        .new_sample_ready(note_2_sample_ready)
+        .new_sample_ready(note_2_sample_ready),
+        .overtones(overtones)
     );
     
     wire [15:0] note_3_sample;
@@ -168,29 +181,30 @@ module music_player(
         .reset(reset),
         .play_enable(advance_time),
         .note_to_load(note_3_value),
-        .duration_to_load(note_3_duration),
+        .input_duration(note_3_duration),
         .load_new_note(note_3_load),
         .done_with_note(note_3_done),
         .beat(beat),
         .generate_next_sample(generate_next_sample),
         .sample_out(note_3_sample),
-        .new_sample_ready(note_3_sample_ready)
-    );
-      
-//   
-//  ****************************************************************************
-//      Sample Sum
-//  ****************************************************************************
-// 
-    wire [15:0] note_sample;
-    sample_sum summator(
-        .toneOneSample(note_1_sample), 
-        .toneTwoSample(note_2_sample),
-        .toneThreeSample(note_3_sample),
-        .toneFourSample(16'd0),
-        .summed_output(note_sample)
+        .new_sample_ready(note_3_sample_ready),
+        .overtones(overtones)
     );
 
+//   
+//  ****************************************************************************
+//      Stereo Conditioner
+//  ****************************************************************************
+//  
+    stereo_conditioner stereo_heart(
+        .note_data_a(note_1_sample),
+        .note_data_b(note_2_sample),
+        .note_data_c(note_3_sample),
+        .stereo_on(stereo_on),
+        .sample_l(sample_left),
+        .sample_r(sample_right)
+    );
+    
 //   
 //  ****************************************************************************
 //      Beat Generator

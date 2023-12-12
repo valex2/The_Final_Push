@@ -32,15 +32,15 @@ module note_arranger(
     // the following feed to the note_players (for each note_player)
     output reg note_1_load,
     output [5:0] note_1,
-    output [5:0] note_1_duration,
+    output [6:0] note_1_duration,
     
     output reg note_2_load,
     output [5:0] note_2,
-    output [5:0] note_2_duration,
+    output [6:0] note_2_duration,
     
     output reg note_3_load,
     output [5:0] note_3,
-    output [5:0] note_3_duration,
+    output [6:0] note_3_duration,
 
     output note_done, // this is a one-pulse that goes to the song-reader
     output reg advance_time // this is high when note_players should be playing, low when they should be paused
@@ -116,7 +116,7 @@ module note_arranger(
         .d(next_note_1),
         .q(note_1)
     );
-    dffr #(6) note_1_duration_reg ( // Note duration flip-flop
+    dffr #(7) note_1_duration_reg ( // Note duration flip-flop
         .clk(clk),
         .r(reset),
         .d(next_note_1_duration),
@@ -130,7 +130,7 @@ module note_arranger(
         .d(next_note_2),
         .q(note_2)
     );
-    dffr #(6) note_2_duration_reg ( // Note duration flip-flop
+    dffr #(7) note_2_duration_reg ( // Note duration flip-flop
         .clk(clk),
         .r(reset),
         .d(next_note_2_duration),
@@ -144,7 +144,7 @@ module note_arranger(
         .d(next_note_3),
         .q(note_3)
     );
-    dffr #(6) note_3_duration_reg ( // Note duration flip-flop
+    dffr #(7) note_3_duration_reg ( // Note duration flip-flop
         .clk(clk),
         .r(reset),
         .d(next_note_3_duration),
@@ -180,7 +180,7 @@ module note_arranger(
                         3'b0xx: begin
                             next_state = ASSIGN;
 
-                            {next_note_1, next_note_1_duration} = note_to_load[14:3]; // information updates
+                            {next_note_1, next_note_1_duration} = note_to_load[14:2]; // information updates
                             note_done_early = 1'b1; // pulse song-reader to load new note // this should be moved to assign
                             
                             next_full = (full | 3'b100); // set note_player 1 to full
@@ -188,7 +188,7 @@ module note_arranger(
                         3'b10x: begin
                             next_state = ASSIGN;
                             
-                            {next_note_2, next_note_2_duration} = note_to_load[14:3]; // information updates
+                            {next_note_2, next_note_2_duration} = note_to_load[14:2]; // information updates
                             note_done_early = 1'b1; // pulse song-reader to load new note // this should be moved to assign
                             
                             next_full = (full | 3'b010); // set note_player 1 to full
@@ -197,7 +197,7 @@ module note_arranger(
                         3'b110: begin
                             next_state = ASSIGN;
 
-                            {next_note_3, next_note_3_duration} = note_to_load[14:3]; // information updates
+                            {next_note_3, next_note_3_duration} = note_to_load[14:2]; // information updates
                             note_done_early = 1'b1; // pulse song-reader to load new note // this should be moved to assign
                             
                             next_full = (full | 3'b001); // set note_player 1 to full
@@ -211,13 +211,13 @@ module note_arranger(
                     next_count = note_to_load[8:3] - 1'd1;
 
                     if (full[2] == 1'b0) begin
-                        {next_note_1, next_note_1_duration} = {6'd0, note_to_load[8:3]}; // set unfilled note_players to play 0 for the note duration
+                        {next_note_1, next_note_1_duration} = {6'd0, note_to_load[8:3], 1'b0}; // set unfilled note_players to play 0 for the note duration
                     end
                     if (full[1] == 1'b0) begin
-                        {next_note_2, next_note_2_duration} = {6'd0, note_to_load[8:3]}; // set unfilled note_players to play 0 for the note duration
+                        {next_note_2, next_note_2_duration} = {6'd0, note_to_load[8:3], 1'b0}; // set unfilled note_players to play 0 for the note duration
                     end
                     if (full[0] == 1'b0) begin
-                        {next_note_3, next_note_3_duration} = {6'd0, note_to_load[8:3]}; // set unfilled note_players to play 0 for the note duration
+                        {next_note_3, next_note_3_duration} = {6'd0, note_to_load[8:3], 1'b0}; // set unfilled note_players to play 0 for the note duration
                     end
                 end
                 else begin

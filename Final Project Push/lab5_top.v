@@ -117,7 +117,7 @@ module lab5_top(
 //  ****************************************************************************
 //       
     wire new_frame;
-    wire [15:0] codec_sample, flopped_sample;
+    wire [15:0] codec_sample, flopped_sample, other_boi;
     wire new_sample, flopped_new_sample;
     music_player #(.BEAT_COUNT(BEAT_COUNT)) music_player(
         .clk(clk_100),
@@ -125,7 +125,8 @@ module lab5_top(
         .play_button(play),
         .next_button(next),
         .new_frame(new_frame), 
-        .sample_out(codec_sample),
+        .sample_left(codec_sample),
+        .sample_right(other_boi),
         .new_sample_generated(new_sample)
     );
     dff #(.WIDTH(17)) sample_reg (
@@ -134,7 +135,7 @@ module lab5_top(
         .q({flopped_new_sample, flopped_sample})
     );
 
-//   
+
 //  ****************************************************************************
 //      Codec interface
 //  ****************************************************************************
@@ -160,8 +161,8 @@ module lab5_top(
         .AC_MCLK(AC_MCLK),
         .AC_SCK(AC_SCK),
         .AC_SDA(AC_SDA),
-        .hphone_l({codec_sample, 8'h00}),
-        .hphone_r(hphone_r),
+        .hphone_l({codec_sample, 8'h00}),// sample_l
+        .hphone_r({other_boi, 8'h00}), // sample_r, 8'h00
         .line_in_l(line_in_l),
         .line_in_r(line_in_r),
         .new_sample(new_frame)
