@@ -22,10 +22,10 @@
 module fpa_vga_driver(
     input clk, 
 
-    input [7:0] aIn,
-    input [7:0] bIn,
-    input [7:0] result,
-    Input [15:0] 
+    //input [7:0] aIn,
+    //input [7:0] bIn,
+    //input [7:0] result,
+
     input [`log2NUM_COLS-1:0] XPos, 
     input [`log2NUM_ROWS-1:0] YPos, 
     input Valid, 
@@ -47,7 +47,28 @@ module fpa_vga_driver(
     reg  [5:0] char_color;
     wire [5:0] char_color_q, char_color_2_q;
     wire       lineValid;
+
+    // angelina added
+    reg [5:0] next_timer;
+    reg [5:0] next_current_note;
+    reg reset_timer;
+    wire timer_expired = (timer == note_duration);
      
+    always @(*) begin
+        reset_timer = 0;
+        next_timer = timer + 1'b1;
+        next_current_note = current_note;
+
+        if (input_note != current_note) begin
+            // New note is input, reset timer and update current note
+            reset_timer = 1;
+            next_current_note = input_note;
+        end else if (timer_expired) begin
+            // Timer expired, reset timer and clear current note
+            reset_timer = 1;
+            next_current_note = 6'd0; // Representing no note or rest
+        end
+    end
 
     wire [`log2NUM_COLS-1:0] XPos_offset = XPos - `TEXT_X_LOC;
 
@@ -145,8 +166,8 @@ endfunction
                 3: char_selection = 6'd22;  // 'V' (22nd letter)
                 4: char_selection = 6'd29;  // ']'
                 5: char_selection = 6'd32;  // ' ' (space)
-                6: char_selection = get_note_chars(prev_note)[11:6]; // First character of the note
-                7: char_selection = get_note_chars(prev_note)[5:0];  // Second character of the note
+                6: char_selection = get_note_chars(previous_note)[11:6]; // First character of the note
+                7: char_selection = get_note_chars(previous_note)[5:0];  // Second character of the note
                 default: char_selection = 6'b100000; // Blank for other positions
             endcase
         end
@@ -241,6 +262,11 @@ end
     // Generates the RGB signals based on raster position
     assign vga_rgb = lineValid ? 6'b111111
                      : ((Valid && color) ? char_color_2_q : 6'b0);
+
+    // angelina's flip flops
+    dff #(.WIDTH(6)) current_note_ff (.clk(clk), .d(next_current_note), .q(current_note));
+    dff #(.WIDTH(6)) previous_note_ff (.clk(clk), .d(current_note), .q(previous_note));
+    dffre #(.WIDTH(6)) timer_ff (.clk(clk), .r(reset_timer), .en(1'b1), .d(next_timer), .q(timer));
 
     //For character display
     dff #(8) tcgrom_reg (.clk(clk), .d(tcgrom_d), .q(tcgrom_q));
