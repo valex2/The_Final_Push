@@ -23,7 +23,18 @@ module music_player(
 
     // Our final output sample to the codec. This needs to be synced to
     // new_frame.
-    output wire [15:0] sample_out
+    output wire [15:0] sample_out,
+    output wire [5:0] current_note_1,
+    output wire [5:0] current_note_duration_1,
+    output wire new_note_available_1,
+    
+    output wire [5:0] current_note_2,
+    output wire [5:0] current_note_duration_2,
+    output wire new_note_available_2,
+    
+    output wire [5:0] current_note_3,
+    output wire [5:0] current_note_duration_3,
+    output wire new_note_available_3
 );
     // The BEAT_COUNT is parameterized so you can reduce this in simulation.
     // If you reduce this to 100 your simulation will be 10x faster.
@@ -38,7 +49,7 @@ module music_player(
 //   we don't need to reset any state in the note_player. If we do it may make
 //   a pop when it resets the output sample.
 //
- 
+    
     wire play;
     wire reset_player;
     wire [1:0] current_song;
@@ -176,7 +187,17 @@ module music_player(
         .sample_out(note_3_sample),
         .new_sample_ready(note_3_sample_ready)
     );
-      
+
+    assign new_note_available_1 = note_1_load;
+    assign new_note_available_2 = note_2_load;
+    assign new_note_available_3 = note_3_load;
+    
+    dffre #(.WIDTH(6)) dff_current_note1 (.clk(clk), .r(reset), .en(note_1_load), .d(note_1_value), .q(current_note_1));
+    dffre #(.WIDTH(6)) dff_current_duration1 (.clk(clk), .r(reset), .en(note_1_load), .d(note_1_duration), .q(current_note_duration_1));
+    dffre #(.WIDTH(6)) dff_current_note2 (.clk(clk), .r(reset), .en(note_2_load), .d(note_2_value), .q(current_note_2));
+    dffre #(.WIDTH(6)) dff_current_duration2 (.clk(clk), .r(reset), .en(note_2_load), .d(note_2_duration), .q(current_note_duration_2));
+    dffre #(.WIDTH(6)) dff_current_note3 (.clk(clk), .r(reset), .en(note_3_load), .d(note_3_value), .q(current_note_3));
+    dffre #(.WIDTH(6)) dff_current_duration3 (.clk(clk), .r(reset), .en(note_3_load), .d(note_3_duration), .q(current_note_duration_3));
 //   
 //  ****************************************************************************
 //      Sample Sum
