@@ -33,14 +33,17 @@ module note_arranger(
     output reg note_1_load,
     output [5:0] note_1,
     output [5:0] note_1_duration,
+    output [1:0] note_1_stereo,
     
     output reg note_2_load,
     output [5:0] note_2,
     output [5:0] note_2_duration,
+    output [1:0] note_2_stereo,
     
     output reg note_3_load,
     output [5:0] note_3,
     output [5:0] note_3_duration,
+    output [1:0] note_3_stereo,
 
     output note_done, // this is a one-pulse that goes to the song-reader
     output reg advance_time // this is high when note_players should be playing, low when they should be paused
@@ -110,6 +113,7 @@ module note_arranger(
 
     // Note information flip-flops
     reg [5:0] next_note_1, next_note_1_duration;
+    reg [1:0] next_note_1_stereo;
     dffr #(6) note_1_reg ( // Note flip-flop
         .clk(clk),
         .r(reset),
@@ -122,8 +126,15 @@ module note_arranger(
         .d(next_note_1_duration),
         .q(note_1_duration)
     );
+    dffr #(2) note_1_stereo_reg (
+        .clk(clk),
+        .r(reset),
+        .d(next_note_1_stereo),
+        .q(note_1_stereo)
+    );
     
     reg [5:0] next_note_2, next_note_2_duration;
+    reg [1:0] next_note_2_stereo;
     dffr #(6) note_2_reg ( // Note flip-flop
         .clk(clk),
         .r(reset),
@@ -136,8 +147,15 @@ module note_arranger(
         .d(next_note_2_duration),
         .q(note_2_duration)
     );
+    dffr #(2) note_2_stereo_reg (
+        .clk(clk),
+        .r(reset),
+        .d(next_note_2_stereo),
+        .q(note_2_stereo)
+    );
     
     reg [5:0] next_note_3, next_note_3_duration;
+    reg [1:0] next_note_3_stereo;
     dffr #(6) note_3_reg ( // Note flip-flop
         .clk(clk),
         .r(reset),
@@ -149,6 +167,12 @@ module note_arranger(
         .r(reset),
         .d(next_note_3_duration),
         .q(note_3_duration)
+    );
+    dffr #(2) note_3_stereo_reg (
+        .clk(clk),
+        .r(reset),
+        .d(next_note_3_stereo),
+        .q(note_3_stereo)
     );
 
     // State machine parameters
@@ -162,9 +186,9 @@ module note_arranger(
         note_2_load = 1'b0;
         note_3_load = 1'b0;
         
-        {next_note_1, next_note_1_duration} = {note_1, note_1_duration};
-        {next_note_2, next_note_2_duration} = {note_2, note_2_duration};
-        {next_note_3, next_note_3_duration} = {note_3, note_3_duration};
+        {next_note_1, next_note_1_duration, next_note_1_stereo} = {note_1, note_1_duration, note_1_stereo};
+        {next_note_2, next_note_2_duration, next_note_2_stereo} = {note_2, note_2_duration, note_2_stereo};
+        {next_note_3, next_note_3_duration, next_note_3_stereo} = {note_3, note_3_duration, note_3_stereo};
         
         next_count = count;
         next_full = reset ? 3'd0 : full;
@@ -181,6 +205,7 @@ module note_arranger(
                             next_state = ASSIGN;
 
                             {next_note_1, next_note_1_duration} = note_to_load[14:3]; // information updates
+                            next_note_1_stereo = note_to_load[2:1];
                             note_done_early = 1'b1; // pulse song-reader to load new note // this should be moved to assign
                             
                             next_full = (full | 3'b100); // set note_player 1 to full
@@ -189,6 +214,7 @@ module note_arranger(
                             next_state = ASSIGN;
                             
                             {next_note_2, next_note_2_duration} = note_to_load[14:3]; // information updates
+                            next_note_2_stereo = note_to_load[2:1];
                             note_done_early = 1'b1; // pulse song-reader to load new note // this should be moved to assign
                             
                             next_full = (full | 3'b010); // set note_player 1 to full
@@ -198,6 +224,7 @@ module note_arranger(
                             next_state = ASSIGN;
 
                             {next_note_3, next_note_3_duration} = note_to_load[14:3]; // information updates
+                            next_note_3_stereo = note_to_load[2:1];
                             note_done_early = 1'b1; // pulse song-reader to load new note // this should be moved to assign
                             
                             next_full = (full | 3'b001); // set note_player 1 to full
@@ -212,12 +239,15 @@ module note_arranger(
 
                     if (full[2] == 1'b0) begin
                         {next_note_1, next_note_1_duration} = {6'd0, note_to_load[8:3]}; // set unfilled note_players to play 0 for the note duration
+                        next_note_1_stereo = 2'b11;
                     end
                     if (full[1] == 1'b0) begin
                         {next_note_2, next_note_2_duration} = {6'd0, note_to_load[8:3]}; // set unfilled note_players to play 0 for the note duration
+                        next_note_2_stereo = 2'b11;
                     end
                     if (full[0] == 1'b0) begin
                         {next_note_3, next_note_3_duration} = {6'd0, note_to_load[8:3]}; // set unfilled note_players to play 0 for the note duration
+                        next_note_3_stereo = 2'b11;
                     end
                 end
                 else begin

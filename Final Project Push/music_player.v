@@ -17,13 +17,19 @@ module music_player(
 
     // The raw new_frame signal from the ac97_if codec.
     input new_frame,
+    
+    input stereo_on,     // turns stereo effects on or off
+    
+    input harmonics_on, // turns harmonics on or off
+    input wire [3:0] overtones, // 0000 corresponds to all at maximum volume, 0111 corresponds to fundamentals at full, all others at half
 
     // This output must go high for one cycle when a new sample is generated.
     output wire new_sample_generated,
 
-    // Our final output sample to the codec. This needs to be synced to
-    // new_frame.
-    output wire [15:0] sample_out
+    // Our final output sample to the codec. This needs to be synced to new_frame.
+    output wire [15:0] sample_left,
+    output wire [15:0] sample_right,
+    output wire [15:0] sample_normal
 );
     // The BEAT_COUNT is parameterized so you can reduce this in simulation.
     // If you reduce this to 100 your simulation will be 10x faster.
@@ -84,16 +90,19 @@ module music_player(
     wire note_1_load;
     wire [5:0] note_1_value;
     wire [5:0] note_1_duration;
+    wire [1:0] note_1_stereo;
     
     wire note_2_done;
     wire note_2_load;
     wire [5:0] note_2_value;
     wire [5:0] note_2_duration;
+    wire [1:0] note_2_stereo;
     
     wire note_3_done;
     wire note_3_load;
     wire [5:0] note_3_value;
     wire [5:0] note_3_duration;
+    wire [1:0] note_3_stereo;
     
     wire advance_time;
     note_arranger note_arranger(
@@ -108,16 +117,19 @@ module music_player(
         .note_1_load(note_1_load),
         .note_1(note_1_value),
         .note_1_duration(note_1_duration),
+        .note_1_stereo(note_1_stereo),
         
         .note_2_done(note_2_done),
         .note_2_load(note_2_load),
         .note_2(note_2_value),
         .note_2_duration(note_2_duration),
+        .note_2_stereo(note_2_stereo),
         
         .note_3_done(note_3_done),
         .note_3_load(note_3_load),
         .note_3(note_3_value),
         .note_3_duration(note_3_duration),
+        .note_3_stereo(note_3_stereo),
         
         .note_done(note_done),
         .advance_time(advance_time) 
@@ -131,50 +143,65 @@ module music_player(
     wire generate_next_sample;
     wire [15:0] note_1_sample;
     wire note_1_sample_ready;
+    wire [1:0] note_1_stereo_out;
     note_player note_player1(
         .clk(clk),
         .reset(reset),
         .play_enable(advance_time),
         .note_to_load(note_1_value),
         .duration_to_load(note_1_duration),
+        .stereo_side_to_load(note_1_stereo),
         .load_new_note(note_1_load),
         .done_with_note(note_1_done),
         .beat(beat),
-        .generate_next_sample(generate_next_sample),
+        .generate_next_sample(new_sample_generated),
         .sample_out(note_1_sample),
-        .new_sample_ready(note_1_sample_ready)
+        .new_sample_ready(note_1_sample_ready),
+        .stereo_side_out(note_1_stereo_out),
+        .harmonics_on(harmonics_on),
+        .overtones(overtones)
     );
     
     wire [15:0] note_2_sample;
     wire note_2_sample_ready;
+    wire [1:0] note_2_stereo_out;
     note_player note_player2(
         .clk(clk),
         .reset(reset),
         .play_enable(advance_time),
         .note_to_load(note_2_value),
         .duration_to_load(note_2_duration),
+        .stereo_side_to_load(note_2_stereo),
         .load_new_note(note_2_load),
         .done_with_note(note_2_done),
         .beat(beat),
-        .generate_next_sample(generate_next_sample),
+        .generate_next_sample(new_sample_generated),
         .sample_out(note_2_sample),
-        .new_sample_ready(note_2_sample_ready)
+        .new_sample_ready(note_2_sample_ready),
+        .stereo_side_out(note_2_stereo_out),
+        .harmonics_on(harmonics_on),
+        .overtones(overtones)
     );
     
     wire [15:0] note_3_sample;
     wire note_3_sample_ready;
+    wire [1:0] note_3_stereo_out;
     note_player note_player3(
         .clk(clk),
         .reset(reset),
         .play_enable(advance_time),
         .note_to_load(note_3_value),
         .duration_to_load(note_3_duration),
+        .stereo_side_to_load(note_3_stereo),
         .load_new_note(note_3_load),
         .done_with_note(note_3_done),
         .beat(beat),
-        .generate_next_sample(generate_next_sample),
+        .generate_next_sample(new_sample_generated),
         .sample_out(note_3_sample),
-        .new_sample_ready(note_3_sample_ready)
+        .new_sample_ready(note_3_sample_ready),
+        .stereo_side_out(note_3_stereo_out),
+        .harmonics_on(harmonics_on),
+        .overtones(overtones)
     );
       
 //   
@@ -182,14 +209,30 @@ module music_player(
 //      Sample Sum
 //  ****************************************************************************
 // 
-    wire [15:0] note_sample;
-    sample_sum summator(
-        .toneOneSample(note_1_sample), 
-        .toneTwoSample(note_2_sample),
-        .toneThreeSample(note_3_sample),
-        .toneFourSample(16'd0),
-        .summed_output(note_sample)
-    );
+//    wire [15:0] note_sample;
+//    sample_sum summator(
+//        .toneOneSample(note_1_sample), 
+//        .toneTwoSample(note_2_sample),
+//        .toneThreeSample(note_3_sample),
+//        .toneFourSample(16'd0),
+//        .summed_output(note_sample)
+//    );
+
+      wire [15:0] left_sample, right_sample;
+      wire [15:0] normal_sample;
+      stereo_conditioner steroids (
+          .note_data_a(note_1_sample),
+          .stereo_a(note_1_stereo_out),
+          .note_data_b(note_2_sample),
+          .stereo_b(note_2_stereo_out),
+          .note_data_c(note_3_sample),
+          .stereo_c(note_3_stereo_out),
+          .sample_l(left_sample),
+          .sample_r(right_sample),
+          .sample_normal(normal_sample),
+          .stereo_on(stereo_on),
+          .clk(clk)
+      );
 
 //   
 //  ****************************************************************************
@@ -210,16 +253,45 @@ module music_player(
 //  ****************************************************************************
 //      Codec Conditioner
 //  ****************************************************************************
-//  
-    assign new_sample_generated = generate_next_sample;
-    codec_conditioner codec_conditioner(
+//  need to sync stuff to a new frame
+//    assign new_sample_generated = generate_next_sample;
+    
+    dff #(1) generate_delay( // adds slack to the system to avoid timing violations
+        .clk(clk),
+        .d(generate_next_sample),
+        .q(new_sample_generated)
+    );
+    
+    codec_conditioner codec_conditioner_left(
         .clk(clk),
         .reset(reset),
-        .new_sample_in(note_sample),
+        .new_sample_in(left_sample),
         .latch_new_sample_in(note_1_sample_ready),
         .generate_next_sample(generate_next_sample),
         .new_frame(new_frame),
-        .valid_sample(sample_out)
+        .valid_sample(sample_left)
+    );
+    
+    wire generate_next_sample_redundant_one; // captures the output from the unused right codec
+    codec_conditioner codec_conditioner_right(
+        .clk(clk),
+        .reset(reset),
+        .new_sample_in(right_sample),
+        .latch_new_sample_in(note_1_sample_ready),
+        .generate_next_sample(generate_next_sample_redundant_one),
+        .new_frame(new_frame),
+        .valid_sample(sample_right)
+    );
+    
+    wire generate_next_sample_redundant_two;
+    codec_conditioner codec_conditioner_normal(
+        .clk(clk),
+        .reset(reset),
+        .new_sample_in(normal_sample),
+        .latch_new_sample_in(note_1_sample_ready),
+        .generate_next_sample(generate_next_sample_redundant_two),
+        .new_frame(new_frame),
+        .valid_sample(sample_normal)
     );
 
 endmodule
