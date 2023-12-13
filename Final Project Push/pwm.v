@@ -55,31 +55,6 @@ module pwm (
         if (counter_next > (duty_latched << 24)) begin
             counter_next = 28'd0;
             pwm_signal_next = ~pwm_signal;
-        end
-            
+        end      
     end
-    
-
-
-
-//    wire [WIDTH + BITS - 1:0] period = (duty << BITS); // the modulation period
-//    reg [WIDTH + BITS - 1:0] counter_next;
-//    wire [WIDTH + BITS - 1:0] counter;
-//    wire counter_reset;
-
-//    // Define the next counter value and then reset 
-//    always @* begin
-//        counter_next = (counter_next == period) ? 7'd0 : counter + 7'd1;
-        
-//        if (counter_next == period) begin
-//            pwm_signal = ~pwm_signal;
-//        end
-//    end
-
-//    dffr #(WIDTH + BITS) counter_ff (
-//        .clk(clk),
-//        .r(reset), // Reset counter on global reset or when it rolls over
-//        .d(counter_next),
-//        .q(counter)
-//    );
 endmodule
