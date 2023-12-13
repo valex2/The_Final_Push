@@ -289,20 +289,8 @@ module lab5_top(
         .clk (clk_100),
         .d (y),
         .q (y_q)
-	);
-wire [5:0] note_duration_d1, note_duration_d2, note_duration_d3;
-wire [5:0] current_note_d1, current_note_d2, current_note_d3;
-
-// Delay for note_duration
-dff #(.WIDTH(6)) delay_note_duration_1 (.clk(clk_100), .d(note_duration), .q(note_duration_d1));
-dff #(.WIDTH(6)) delay_note_duration_2 (.clk(clk_100), .d(note_duration_d1), .q(note_duration_d2));
-dff #(.WIDTH(6)) delay_note_duration_3 (.clk(clk_100), .d(note_duration_d2), .q(note_duration_d3));
-
-// Delay for current_note
-dff #(.WIDTH(6)) delay_current_note_1 (.clk(clk_100), .d(current_note), .q(current_note_d1));
-dff #(.WIDTH(6)) delay_current_note_2 (.clk(clk_100), .d(current_note_d1), .q(current_note_d2));
-dff #(.WIDTH(6)) delay_current_note_3 (.clk(clk_100), .d(current_note_d2), .q(current_note_d3));
-
+    );
+    
 //    dff #(.WIDTH(6)) note_reg (
 //        .clk (clk_100), 
 //        .d (current_note), 
@@ -313,15 +301,27 @@ dff #(.WIDTH(6)) delay_current_note_3 (.clk(clk_100), .d(current_note_d2), .q(cu
 //        .d (note_duration), 
 //        .q (duration_q)
 //    );
-	
+	wire [5:0] note_duration_d1, note_duration_d2, note_duration_d3;
+    wire [5:0] current_note_d1, current_note_d2, current_note_d3;
+    
+    // Delay for note_duration
+    dff #(.WIDTH(6)) delay_note_duration_1 (.clk(clk_100), .d(note_duration), .q(note_duration_d1));
+    dff #(.WIDTH(6)) delay_note_duration_2 (.clk(clk_100), .d(note_duration_d1), .q(note_duration_d2));
+    dff #(.WIDTH(6)) delay_note_duration_3 (.clk(clk_100), .d(note_duration_d2), .q(note_duration_d3));
+    
+    // Delay for current_note
+    dff #(.WIDTH(6)) delay_current_note_1 (.clk(clk_100), .d(current_note), .q(current_note_d1));
+    dff #(.WIDTH(6)) delay_current_note_2 (.clk(clk_100), .d(current_note_d1), .q(current_note_d2));
+    dff #(.WIDTH(6)) delay_current_note_3 (.clk(clk_100), .d(current_note_d2), .q(current_note_d3));
+
     // Display Driver
     fpa_vga_driver fpa_vga (
         .clk     (clk_100),
         .XPos    (x_q), // x_q
         .YPos    (y_q),
 
-	   .input_note(note_q),
-	   .note_duration(duration_q),
+	   .input_note(current_note_d3),
+	   .note_duration(note_duration_d3),
 	   .stereo_on(stereo_on),
 	   .harmonics_on(harmonics_on),
 	   .overtones_on(overtones_on),

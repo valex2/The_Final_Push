@@ -21,9 +21,9 @@
 
 module fpa_vga_driver(
     input clk, 
-    input [7:0] aIn,
-    input [7:0] bIn,
-    input [7:0] result,
+//    input [7:0] aIn,
+//    input [7:0] bIn,
+//    input [7:0] result,
     input [`log2NUM_COLS-1:0] XPos, 
     input [`log2NUM_ROWS-1:0] YPos, 
     input Valid, 
