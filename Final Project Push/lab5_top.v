@@ -49,7 +49,7 @@ module lab5_top(
     // TODO: output LED0 onto something
   
 );  
-    wire overtone_input = {sw[5], sw[4], sw[3], sw[2]}; // 0000 (max volue), where msb is fundamental
+    wire [3:0] overtone_input = {sw[5], sw[4], sw[3], sw[2]}; // 0000 (max volue), where msb is fundamental
 
     wire reset, play_button, next_button;
     assign {reset, play_button, next_button} = btn;
@@ -68,7 +68,27 @@ module lab5_top(
     );
 
 
-  
+    /////////// LEDS ///////////
+    //assign led = codec_sample[15:12];
+    wire [3:0] led_duty_cycle;
+    assign led_duty_cycle = overtone_input;
+    
+    wire pwm_signal, rgb_pwm_signal;
+    pwm pwm_led (
+        .clk(clk_100),
+        .duty(led_duty_cycle),
+        .pwm_signal(pwm_signal)
+   );
+   assign led = {pwm_signal, pwm_signal, pwm_signal, pwm_signal};
+   
+   pwm pwm_rgb0 (
+        .clk(clk_100),
+        .duty(led_duty_cycle),
+        .pwm_signal(rgb_pwm_signal)
+   );
+    assign leds_rgb_0 = {rgb_pwm_signal, rgb_pwm_signal, rgb_pwm_signal};
+    assign leds_rgb_1 = {rgb_pwm_signal, rgb_pwm_signal, rgb_pwm_signal};
+
     // button_press_unit's WIDTH parameter is exposed here so that you can
     // reduce it in simulation.  Setting it to 1 effectively disables it.
     parameter BPU_WIDTH = 20;
@@ -163,26 +183,6 @@ module lab5_top(
 //    assign leds_rgb_0 = left_sample[15:13];
 //    assign leds_rgb_1 = left_sample[11:9];
 //    assign led = left_sample[15:12];
-
-    //assign led = codec_sample[15:12];
-    wire [3:0] led_duty_cycle;
-    wire pwm_signal, rgb_pwm_signal;
-    assign led_duty_cycle = overtone_input;
-    pwm #(.WIDTH(4)) pwm_led (
-        .clk(clk_100),
-        .enable(1'b1), // turns on rgbs when harmonics are on
-        .duty(led_duty_cycle),
-        .pwm_signal(pwm_signal)
-   );
-   assign led = {pwm_signal, pwm_signal, pwm_signal, pwm_signal};
-   pwm #(.WIDTH(4)) pwm_rgb0 (
-        .clk(clk_100),
-        .enable(1'b1), // turns on rgbs when harmonics are on
-        .duty(led_duty_cycle),
-        .pwm_signal(rgb_pwm_signal)
-   );
-    assign leds_rgb_0 = {rgb_pwm_signal, rgb_pwm_signal, rgb_pwm_signal};
-    assign leds_rgb_1 = {rgb_pwm_signal, rgb_pwm_signal, rgb_pwm_signal};
     
     adau1761_codec adau1761_codec(
         .clk_100(clk_100),
