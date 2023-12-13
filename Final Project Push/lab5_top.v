@@ -30,7 +30,7 @@ module lab5_top(
     output wire [2:0] leds_rgb_1,
 
     input [2:0] btn,
-//    input [7:0] sw,
+    input [7:0] sw,
 
     /* 
     //VGA OUTPUT 
@@ -49,6 +49,7 @@ module lab5_top(
     // TODO: output LED0 onto something
   
 );  
+    wire overtone_input = {sw[5], sw[4], sw[3], sw[2]}; // 0000 (max volue), where msb is fundamental
 
     wire reset, play_button, next_button;
     assign {reset, play_button, next_button} = btn;
@@ -121,13 +122,16 @@ module lab5_top(
     wire [15:0] left_sample, flopped_left_sample;
     wire [15:0] right_sample, flopped_right_sample;
     wire new_sample, flopped_new_sample;
+    
     music_player #(.BEAT_COUNT(BEAT_COUNT)) music_player(
         .clk(clk_100),
         .reset(reset),
         .play_button(play),
         .next_button(next),
         .new_frame(new_frame),
-        .stereo_on(1'b1), // change this to be toggleable from switches 
+        .stereo_on(sw[7]), 
+        .harmonics_on(sw[6]),
+        .overtones(overtone_input), // use switches for this eventually
         .sample_left(left_sample),
         .sample_right(right_sample),
         .new_sample_generated(new_sample)

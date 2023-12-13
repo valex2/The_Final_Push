@@ -11,13 +11,27 @@ module note_player(
     input generate_next_sample,  // Tells us when the codec wants a new sample
     output [15:0] sample_out,  // Our sample output
     output new_sample_ready,  // Tells the codec when we've got a sample
-    output [1:0] stereo_side_out // one hot signal that tells stereo conditioner what side to output on
+    output [1:0] stereo_side_out, // one hot signal that tells stereo conditioner what side to output on
+    
+    input harmonics_on,
+    input [3:0] overtones
 );
     reg [5:0] next;
     wire [5:0] loaded_duration;
     wire [5:0] loaded_note;
+    
     wire [19:0] step_size;
-
+    wire [19:0] double_step; // store double the value of step_size
+    wire [19:0] triple_step; // store triple the value of step_size
+    wire [19:0] quadruple_step; // store quadruple the value of step_size
+    
+    wire [15:0] summed_output;
+    
+    wire signed [15:0] toneOneSample;
+    wire signed [15:0] toneTwoSample;    
+    wire signed [15:0] toneThreeSample;
+    wire signed [15:0] toneFourSample;
+    
     wire [1:0] state;
     reg [1:0] next_state;
     dffr #(2) state_reg ( // State flip-flop
@@ -88,8 +102,6 @@ module note_player(
                     next_state = PLAY;
                     next_count = loaded_duration - 1;
                     done_with_note = 1'b0;
-                    // This is done automatically //loaded_duration = duration_to_load; // update wires
-                    //loaded_note = note_to_load;
                 end else begin 
                     next_state = WAIT;
                     next_count = count;
@@ -147,12 +159,40 @@ module note_player(
         endcase
     end
 
-    sine_reader sinester(
+    assign double_step = step_size[19:0] + step_size[19:0];
+    assign triple_step = double_step[19:0] + step_size[19:0];
+    assign quadruple_step = double_step[19:0] + double_step[19:0];
+    
+    sine_reader fundamental(
         .clk(clk),
         .reset(reset),
         .step_size(step_size),
         .generate_next(generate_next),
         .sample_ready(new_sample_ready),
-        .sample(sample_out)
+        .sample(toneOneSample)
     );
+    sine_reader tone_2(
+        .clk(clk),
+        .reset(reset),
+        .step_size(double_step),
+        .generate_next(generate_next && harmonics_on),
+        .sample(toneTwoSample)
+    );
+    sine_reader tone_3(
+        .clk(clk),
+        .reset(reset),
+        .step_size(triple_step),
+        .generate_next(generate_next && harmonics_on),
+        .sample(toneThreeSample)
+    );
+    sine_reader tone_4(
+        .clk(clk),
+        .reset(reset),
+        .step_size(quadruple_step),
+        .generate_next(generate_next && harmonics_on),
+        .sample(toneFourSample)
+    );
+    sample_sum blendTones(.toneOneSample(toneOneSample>>>overtones[0]), .toneTwoSample(toneTwoSample>>>overtones[1]), .toneThreeSample(toneThreeSample>>>overtones[2]), .toneFourSample(toneFourSample>>>overtones[3]), .summed_output(summed_output)); // shifts right by 2
+
+    assign sample_out = summed_output;
 endmodule

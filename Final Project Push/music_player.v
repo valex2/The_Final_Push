@@ -18,8 +18,10 @@ module music_player(
     // The raw new_frame signal from the ac97_if codec.
     input new_frame,
     
-    // this is what turns stereo effects on or off
-    input stereo_on, // one is on
+    input stereo_on,     // turns stereo effects on or off
+    
+    input harmonics_on, // turns harmonics on or off
+    input wire [3:0] overtones, // 0000 corresponds to all at maximum volume, 0111 corresponds to fundamentals at full, all others at half
 
     // This output must go high for one cycle when a new sample is generated.
     output wire new_sample_generated,
@@ -154,7 +156,9 @@ module music_player(
         .generate_next_sample(generate_next_sample),
         .sample_out(note_1_sample),
         .new_sample_ready(note_1_sample_ready),
-        .stereo_side_out(note_1_stereo_out)
+        .stereo_side_out(note_1_stereo_out),
+        .harmonics_on(harmonics_on),
+        .overtones(overtones)
     );
     
     wire [15:0] note_2_sample;
@@ -173,7 +177,9 @@ module music_player(
         .generate_next_sample(generate_next_sample),
         .sample_out(note_2_sample),
         .new_sample_ready(note_2_sample_ready),
-        .stereo_side_out(note_2_stereo_out)
+        .stereo_side_out(note_2_stereo_out),
+        .harmonics_on(harmonics_on),
+        .overtones(overtones)
     );
     
     wire [15:0] note_3_sample;
@@ -192,7 +198,9 @@ module music_player(
         .generate_next_sample(generate_next_sample),
         .sample_out(note_3_sample),
         .new_sample_ready(note_3_sample_ready),
-        .stereo_side_out(note_3_stereo_out)
+        .stereo_side_out(note_3_stereo_out),
+        .harmonics_on(harmonics_on),
+        .overtones(overtones)
     );
       
 //   
