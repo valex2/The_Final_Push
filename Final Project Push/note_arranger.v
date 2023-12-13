@@ -113,7 +113,7 @@ module note_arranger(
 
     // Note information flip-flops
     reg [5:0] next_note_1, next_note_1_duration;
-    reg next_note_1_stereo;
+    reg [1:0] next_note_1_stereo;
     dffr #(6) note_1_reg ( // Note flip-flop
         .clk(clk),
         .r(reset),
@@ -134,7 +134,7 @@ module note_arranger(
     );
     
     reg [5:0] next_note_2, next_note_2_duration;
-    reg next_note_2_stereo;
+    reg [1:0] next_note_2_stereo;
     dffr #(6) note_2_reg ( // Note flip-flop
         .clk(clk),
         .r(reset),
@@ -155,7 +155,7 @@ module note_arranger(
     );
     
     reg [5:0] next_note_3, next_note_3_duration;
-    reg next_note_3_stereo;
+    reg [1:0] next_note_3_stereo;
     dffr #(6) note_3_reg ( // Note flip-flop
         .clk(clk),
         .r(reset),
