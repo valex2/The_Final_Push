@@ -93,17 +93,17 @@ module stereo_conditioner(
     );
 
     sample_sum sum_left(
-        .toneOneSample(aLeft>>>2),
-        .toneTwoSample(bLeft>>>2),
-        .toneThreeSample(cLeft>>>2),
+        .toneOneSample(aLeft),
+        .toneTwoSample(bLeft),
+        .toneThreeSample(cLeft),
         .toneFourSample(16'b0), // only need 3 channels
         .summed_output(left_out)
     );
 
     sample_sum sum_right(
-        .toneOneSample(aRight>>>2),
-        .toneTwoSample(bRight>>>2),
-        .toneThreeSample(cRight>>>2),
+        .toneOneSample(aRight),
+        .toneTwoSample(bRight),
+        .toneThreeSample(cRight),
         .toneFourSample(16'b0), // only need 3 channels
         .summed_output(right_out)
     );
@@ -119,8 +119,8 @@ module stereo_conditioner(
                 sample_r = normal_out;
                 end
             default : begin
-                sample_l = normal_out;
-                sample_r = normal_out;
+                sample_l = left_out;
+                sample_r = right_out;
                 end
         endcase
     end
