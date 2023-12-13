@@ -241,7 +241,7 @@ module music_player(
 //  ****************************************************************************
 //  
     assign new_sample_generated = generate_next_sample;
-    assign current_note = note_1_value;
+    assign current_note = note_1_value; // delay w three flops
     assign current_note_duration = note_1_duration[5:0];
 
     codec_conditioner codec_conditioner(
