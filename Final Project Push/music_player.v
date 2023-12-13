@@ -17,13 +17,16 @@ module music_player(
 
     // The raw new_frame signal from the ac97_if codec.
     input new_frame,
+    
+    // this is what turns stereo effects on or off
+    input stereo_on, // one is on
 
     // This output must go high for one cycle when a new sample is generated.
     output wire new_sample_generated,
 
-    // Our final output sample to the codec. This needs to be synced to
-    // new_frame.
-    output wire [15:0] sample_out
+    // Our final output sample to the codec. This needs to be synced to new_frame.
+    output wire [15:0] sample_left,
+    output wire [15:0] sample_right
 );
     // The BEAT_COUNT is parameterized so you can reduce this in simulation.
     // If you reduce this to 100 your simulation will be 10x faster.
@@ -197,14 +200,27 @@ module music_player(
 //      Sample Sum
 //  ****************************************************************************
 // 
-    wire [15:0] note_sample;
-    sample_sum summator(
-        .toneOneSample(note_1_sample), 
-        .toneTwoSample(note_2_sample),
-        .toneThreeSample(note_3_sample),
-        .toneFourSample(16'd0),
-        .summed_output(note_sample)
-    );
+//    wire [15:0] note_sample;
+//    sample_sum summator(
+//        .toneOneSample(note_1_sample), 
+//        .toneTwoSample(note_2_sample),
+//        .toneThreeSample(note_3_sample),
+//        .toneFourSample(16'd0),
+//        .summed_output(note_sample)
+//    );
+
+      wire [15:0] left_sample, right_sample;
+      stereo_conditioner steroids (
+          .note_data_a(note_1_sample),
+          .stereo_a(note_1_stereo_out),
+          .note_data_b(note_2_sample),
+          .stereo_b(note_2_stereo_out),
+          .note_data_c(note_3_sample),
+          .stereo_c(note_3_stereo_out),
+          .sample_l(left_sample),
+          .sample_r(right_sample),
+          .stereo_on(stereo_on)
+      );
 
 //   
 //  ****************************************************************************
@@ -225,16 +241,27 @@ module music_player(
 //  ****************************************************************************
 //      Codec Conditioner
 //  ****************************************************************************
-//  
+//  need to sync stuff to a new frame
     assign new_sample_generated = generate_next_sample;
-    codec_conditioner codec_conditioner(
+    codec_conditioner codec_conditioner_left(
         .clk(clk),
         .reset(reset),
-        .new_sample_in(note_sample),
+        .new_sample_in(left_sample),
         .latch_new_sample_in(note_1_sample_ready),
         .generate_next_sample(generate_next_sample),
         .new_frame(new_frame),
-        .valid_sample(sample_out)
+        .valid_sample(sample_left)
+    );
+    
+    wire generate_next_sample_redundant; // captures the output from the unused right codec
+    codec_conditioner codec_conditioner_right(
+        .clk(clk),
+        .reset(reset),
+        .new_sample_in(right_sample),
+        .latch_new_sample_in(note_1_sample_ready),
+        .generate_next_sample(generate_next_sample_redundant),
+        .new_frame(new_frame),
+        .valid_sample(sample_right)
     );
 
 endmodule
