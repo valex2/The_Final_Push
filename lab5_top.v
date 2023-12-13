@@ -1,4 +1,4 @@
-vgsadaumodule lab5_top(
+module lab5_top(
     /*
     'define H_SYNC_PULSE 112
 	'define H_BACK_PORCH 248
@@ -119,6 +119,8 @@ vgsadaumodule lab5_top(
     wire new_frame;
     wire [15:0] codec_sample, flopped_sample;
     wire new_sample, flopped_new_sample;
+    wire [5:0] current_note, note_duration;
+    wire [5:0] note_q, duration_q;
     music_player #(.BEAT_COUNT(BEAT_COUNT)) music_player(
         .clk(clk_100),
         .reset(reset),
@@ -126,7 +128,9 @@ vgsadaumodule lab5_top(
         .next_button(next),
         .new_frame(new_frame), 
         .sample_out(codec_sample),
-        .new_sample_generated(new_sample)
+        .new_sample_generated(new_sample),
+        .current_note(current_note),
+        .current_note_duration(note_duration)
     );
     dff #(.WIDTH(17)) sample_reg (
         .clk(clk_100),
@@ -207,31 +211,47 @@ vgsadaumodule lab5_top(
     
     
     
-    wave_display_top wd_top (
-		.clk (clk_100),
-		.reset (reset),
-		.new_sample (new_sample),
-		.sample (flopped_sample),
-        .x(x[10:0]),
-        .y(y[9:0]),
-        //.valid(valid),
-		.valid(vde),
-		.vsync(vsync),
-		.r(r_1),
-		.g(g_1),
-		.b(b_1)
-    );
+//    wave_display_top wd_top (
+//		.clk (clk_100),
+//		.reset (reset),
+//		.new_sample (new_sample),
+//		.sample (flopped_sample),
+//        .x(x[10:0]),
+//        .y(y[9:0]),
+//        //.valid(valid),
+//		.valid(vde),
+//		.vsync(vsync),
+//		.r(r_1),
+//		.g(g_1),
+//		.b(b_1)
+//    );
     
-    assign r = r_1[7:4];
-    assign g = g_1[7:4];
-    assign b = b_1[7:4];
+//    assign r = r_1[7:4];
+//    assign g = g_1[7:4];
+//    assign b = b_1[7:4];
+//    assign pix_data = {
+//                        8'b0, 
+//                        r[3], r[3], r[2], r[2], r[1], r[1], r[0], r[0],
+//                        g[3], g[3], g[2], g[2], g[1], g[1], g[0], g[0],
+//                        b[3], b[3], b[2], b[2], b[1], b[1], b[0], b[0]
+//                       }; 
+   
+    wire [10:0] x_q, y_q;
+    wire [5:0] vga_rgb, rgb_q;
+    wire stereo_on, harmonics_on, overtones_on;
+    assign stereo_on = 1;
+   // VGA Colors
+    assign r = {2{rgb_q [5:4]}};
+    assign g = {2{rgb_q [3:2]}};
+   assign b = {2{rgb_q [1:0]}};
+
     assign pix_data = {
-                        8'b0, 
-                        r[3], r[3], r[2], r[2], r[1], r[1], r[0], r[0],
-                        g[3], g[3], g[2], g[2], g[1], g[1], g[0], g[0],
-                        b[3], b[3], b[2], b[2], b[1], b[1], b[0], b[0]
-                       }; 
-                  
+        8'b0,
+        r[3], r[3], r[2], r[2], r[1], r[1], r[0], r[0],
+        g[3], g[3], g[2], g[2], g[1], g[1], g[0], g[0],
+        b[3], b[3], b[2], b[2], b[1], b[1], b[0], b[0]
+    };
+    
     hdmi_tx_0 U3 (
         .pix_clk(display_clk),
         .pix_clkx5(serial_clk),
@@ -241,23 +261,47 @@ vgsadaumodule lab5_top(
         .hsync(hsync),
         .vsync(vsync),
         .vde(vde),
-        .TMDS_CLK_P(TMDS_Clk_p),musi
+        .TMDS_CLK_P(TMDS_Clk_p),
         .TMDS_CLK_N(TMDS_Clk_n),
         .TMDS_DATA_P(TMDS_Data_p),
         .TMDS_DATA_N(TMDS_Data_n)
     );
 
+    
+	dff #(.WIDTH (11)) x_dff (
+        .clk (clk_100),
+        .d (x),
+        .q (x_q)
+    );
+ 
+	dff #(.WIDTH (11)) y_dff (
+        .clk (clk_100),
+        .d (y),
+        .q (y_q)
+    );
+    
+    dff #(.WIDTH(6)) note_reg (
+        .clk (clk_100), 
+        .d (current_note), 
+        .q (note_q)
+    );
+     dff #(.WIDTH(6)) duration_reg (
+        .clk (clk_100), 
+        .d (note_duration), 
+        .q (duration_q)
+    );
+	
     // Display Driver
     fpa_vga_driver fpa_vga (
         .clk     (clk_100),
         .XPos    (x_q),
         .YPos    (y_q),
 
-	.current_note(current_note),
-	.note_duration(note_duration),
-	.stereo_on(stereo_on),
-	.harmonics_on(harmonics_on),
-	.overtones_on(overtones_on),
+	   .input_note(note_q),
+	   .note_duration(duration_q),
+	   .stereo_on(stereo_on),
+	   .harmonics_on(harmonics_on),
+	   .overtones_on(overtones_on),
         //.result  (result_q),
 
         //.Valid   (vde),
