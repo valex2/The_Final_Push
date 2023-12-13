@@ -37,7 +37,7 @@ module fpa_vga_driver(
     input [5:0] input_note3, // Current note index
     input [5:0] note_duration3, // Previous note index
     input stereo_on, harmonics_on, overtones_on, // Feature flags
-    
+    input [3:0] overtones,
     input next_button,
     input play_button,
 
@@ -55,7 +55,7 @@ module fpa_vga_driver(
 
     // angelina added
     reg [5:0] next_timer;
-    reg [5:0] next_current_note;
+    reg [5:0] next_current_note1;
     wire [5:0] current_note1, current_duration1, timer, previous_note1, previous_note2, previous_note3;
     reg reset_timer;
     reg [11:0] prev_note1_chars, cur_note1_chars, prev_note2_chars, cur_note2_chars, prev_note3_chars, cur_note3_chars;
@@ -78,7 +78,8 @@ module fpa_vga_driver(
 //    end
 
     wire [`log2NUM_COLS-1:0] XPos_offset = XPos - `TEXT_X_LOC;
-
+    
+    // lookup table for note indices
     function [5:0] get_note_chars;
         input [5:0] input_note; 
         begin
@@ -229,7 +230,7 @@ endfunction
         //char_selection = 6'b100000;
         //char_color = 6'b111111;  // RRBBGG
         prev_note1_chars = get_note_chars(previous_note1);
-        cur_note2_chars = get_note_chars(input_note1);
+        cur_note1_chars = get_note_chars(input_note1);
         
         case (YPos[`log2NUM_ROWS-1:5])
             // First row of text
@@ -239,16 +240,16 @@ endfunction
                 case (XPos_offset[`log2NUM_COLS-1:5])
                     0: begin
                         if (play_button) begin
-                        char_selection = 6'd61;
+                        char_selection = 6'd45;
                     end else begin
-                        char_selection = 6'd62;
+                        char_selection = 6'd46;
                     end
                     end
                     20: begin
                         if(next_button) begin
                         char_selection = 6'd63;
                     end else begin
-                    char_selection = 6'd00; 
+                    char_selection = 6'b100000; 
                     end 
                     end
                     default: char_selection = 6'b100000;
@@ -326,31 +327,42 @@ endfunction
         
                 // Space between words
                 6: char_selection = 6'd32; // ' ' (space)
-        
+                // Logic to display "OVERTONES"
+                7: char_selection = overtones_on ? 6'd15 : 6'b100000;// 'O' (15th letter)
+                8: char_selection = overtones_on ? 6'd22 : 6'b100000;// 'V' (22nd letter)
+                9: char_selection = overtones_on ? 6'd5 : 6'b100000; // 'E' (5th letter)
+                10: char_selection = overtones_on ? 6'd18 : 6'b100000;// 'R' (18th letter)
+                11: char_selection = overtones_on ? 6'd20 : 6'b100000;// 'T' (20th letter)
+                12: char_selection = overtones_on ? 6'd15 : 6'b100000;// 'O' (15th letter)
+                13: char_selection = overtones_on ? 6'd14 : 6'b100000;// 'N' (14th letter)
+                14: char_selection = overtones_on ? 6'd5 : 6'b100000; // 'E' (5th letter)
+                //25: char_selection = overtones_on ? 6'd50: 6'b100000;// 'S' (19th letter)
+                15: begin
+                    if(overtones[0]) begin
+                       char_selection = 6'd50;
+                    end else if(overtones[1]) begin
+                        char_selection = 6'd51;
+                    end else if(overtones[2]) begin
+                        char_selection = 6'd52;
+                    end else begin
+                        char_selection = 6'd53;
+                    end
+                end       
                 // Logic to display "HARMONICS"
-                7: char_selection = harmonics_on ? 6'd8 : 6'b100000;  // 'H' (8th letter)
-                8: char_selection = harmonics_on ? 6'd1 : 6'b100000;  // 'A' (1st letter)
-                9: char_selection = harmonics_on ? 6'd18 : 6'b100000; // 'R' (18th letter)
-                10: char_selection = harmonics_on ? 6'd13 : 6'b100000;// 'M' (13th letter)
-                11: char_selection = harmonics_on ? 6'd15 : 6'b100000;// 'O' (15th letter)
-                12: char_selection = harmonics_on ? 6'd14 : 6'b100000;// 'N' (14th letter)
-                13: char_selection = harmonics_on ? 6'd9 : 6'b100000; // 'I' (9th letter)
-                14: char_selection = harmonics_on ? 6'd3 : 6'b100000; // 'C' (3rd letter)
-                15: char_selection = harmonics_on ? 6'd19 : 6'b100000;// 'S' (19th letter)
+                16: char_selection = harmonics_on ? 6'd8 : 6'b100000;  // 'H' (8th letter)
+                17: char_selection = harmonics_on ? 6'd1 : 6'b100000;  // 'A' (1st letter)
+                18: char_selection = harmonics_on ? 6'd18 : 6'b100000; // 'R' (18th letter)
+                19: char_selection = harmonics_on ? 6'd13 : 6'b100000;// 'M' (13th letter)
+                20: char_selection = harmonics_on ? 6'd15 : 6'b100000;// 'O' (15th letter)
+                21: char_selection = harmonics_on ? 6'd14 : 6'b100000;// 'N' (14th letter)
+                22: char_selection = harmonics_on ? 6'd9 : 6'b100000; // 'I' (9th letter)
+                23: char_selection = harmonics_on ? 6'd3 : 6'b100000; // 'C' (3rd letter)
+                24: char_selection = harmonics_on ? 6'd19 : 6'b100000;// 'S' (19th letter)
         
                 // Space between words
-                16: char_selection = 6'd32; // ' ' (space)
+                25: char_selection = 6'd32; // ' ' (space)
         
-                // Logic to display "OVERTONES"
-                17: char_selection = overtones_on ? 6'd15 : 6'b100000;// 'O' (15th letter)
-                18: char_selection = overtones_on ? 6'd22 : 6'b100000;// 'V' (22nd letter)
-                19: char_selection = overtones_on ? 6'd5 : 6'b100000; // 'E' (5th letter)
-                20: char_selection = overtones_on ? 6'd18 : 6'b100000;// 'R' (18th letter)
-                21: char_selection = overtones_on ? 6'd20 : 6'b100000;// 'T' (20th letter)
-                22: char_selection = overtones_on ? 6'd15 : 6'b100000;// 'O' (15th letter)
-                23: char_selection = overtones_on ? 6'd14 : 6'b100000;// 'N' (14th letter)
-                24: char_selection = overtones_on ? 6'd5 : 6'b100000; // 'E' (5th letter)
-                25: char_selection = overtones_on ? 6'd50: 6'b100000;// 'S' (19th letter)
+
         
                 default: char_selection = 6'b100000; // Blank for other positions
             endcase
@@ -389,8 +401,8 @@ end
                      : ((Valid && color) ? char_color_2_q : 6'b0);
 
     // angelina's flip flops
-    dff #(.WIDTH(6)) current_note_ff (.clk(clk), .d(next_current_note), .q(current_note));
-    dff #(.WIDTH(6)) previous_note_ff (.clk(clk), .d(current_note), .q(previous_note));
+    dff #(.WIDTH(6)) current_note_ff (.clk(clk), .d(next_current_note1), .q(current_note1));
+    dff #(.WIDTH(6)) previous_note_ff (.clk(clk), .d(current_note1), .q(previous_note1));
     dffre #(.WIDTH(6)) timer_ff (.clk(clk), .r(reset_timer), .en(1'b1), .d(next_timer), .q(timer));
 
     //For character display

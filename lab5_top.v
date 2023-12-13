@@ -254,8 +254,10 @@ module lab5_top(
 //                       }; 
    
     wire stereo_on, harmonics_on, overtones_on;
+    wire [3:0] overtones;
+    assign overtones = 4'b1111;
     assign stereo_on = 1;
-    assign harmonics_on = 1;
+    assign overtones_on = 1;
    // VGA Colors
 //   assign r = {2{rgb_q [5:4]}};
 //   assign g = {2{rgb_q [3:2]}};
@@ -356,7 +358,7 @@ module lab5_top(
 	   .stereo_on(stereo_on),
 	   .harmonics_on(harmonics_on),
 	   .overtones_on(overtones_on),
-
+       .overtones(overtones),
         //.Valid   (vde),
         .Valid   (1'b1),
 
