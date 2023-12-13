@@ -152,10 +152,30 @@ module lab5_top(
 	wire [23:0] line_in_r =  0; 
 	
     // Output the sample onto the LEDs for the fun of it.
-    assign leds_rgb_0 = left_sample[15:13];
-    assign leds_rgb_1 = left_sample[11:9];
-    assign led = left_sample[15:12];
+//    assign leds_rgb_0 = left_sample[15:13];
+//    assign leds_rgb_1 = left_sample[11:9];
+//    assign led = left_sample[15:12];
 
+    //assign led = codec_sample[15:12];
+    wire [3:0] led_duty_cycle;
+    wire pwm_signal, rgb_pwm_signal;
+    assign led_duty_cycle = overtone_input;
+    pwm #(.WIDTH(4)) pwm_led (
+        .clk(clk_100),
+        .enable(1'b1), // turns on rgbs when harmonics are on
+        .duty(led_duty_cycle),
+        .pwm_signal(pwm_signal)
+   );
+   assign led = {pwm_signal, pwm_signal, pwm_signal, pwm_signal};
+   pwm #(.WIDTH(4)) pwm_rgb0 (
+        .clk(clk_100),
+        .enable(1'b1), // turns on rgbs when harmonics are on
+        .duty(led_duty_cycle),
+        .pwm_signal(rgb_pwm_signal)
+   );
+    assign leds_rgb_0 = {rgb_pwm_signal, rgb_pwm_signal, rgb_pwm_signal};
+    assign leds_rgb_1 = {rgb_pwm_signal, rgb_pwm_signal, rgb_pwm_signal};
+    
     adau1761_codec adau1761_codec(
         .clk_100(clk_100),
         .reset(reset),

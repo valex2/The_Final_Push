@@ -30,6 +30,8 @@ module stereo_conditioner(
     reg signed [15:0] aLeft,bLeft,cLeft,aRight,bRight,cRight; // 16 bit muxes
     wire [15:0] normal_out, left_out, right_out;
     
+    
+    
     always @(*) begin
         case(stereo_a) // for data a
             2'b01 : begin  // 0 = right
