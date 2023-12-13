@@ -583,7 +583,36 @@ module tcgrom(
             9'h1fd: data = 8'b01100000; // %   **        %
             9'h1fe: data = 8'b01100000; // %   **        %
             9'h1ff: data = 8'b00000000; // %             %
-  
+            
+         // Play Symbol (right-pointing triangle)
+            9'h020: data = 8'b00010000; //        *
+            9'h021: data = 8'b00110000; //       **
+            9'h022: data = 8'b01110000; //      ***
+            9'h023: data = 8'b11110000; //     ****
+            9'h024: data = 8'b01110000; //      ***
+            9'h025: data = 8'b00110000; //       **
+            9'h026: data = 8'b00010000; //        *
+            9'h027: data = 8'b00000000; // (blank line for spacing)
+
+            // Pause Symbol (two vertical bars)
+            9'h030: data = 8'b11001100; // **    **
+            9'h031: data = 8'b11001100; // **    **
+            9'h032: data = 8'b11001100; // **    **
+            9'h033: data = 8'b11001100; // **    **
+            9'h034: data = 8'b11001100; // **    **
+            9'h035: data = 8'b11001100; // **    **
+            9'h036: data = 8'b11001100; // **    **
+            9'h037: data = 8'b00000000; // (blank line for spacing)
+            // Fast-Forward Symbol (two right-pointing triangles side by side)
+            9'h040: data = 8'b00010001; //        *     *
+            9'h041: data = 8'b00110011; //       **    **
+            9'h042: data = 8'b01110111; //      ***   ***
+            9'h043: data = 8'b11111111; //     **** ****
+            9'h044: data = 8'b01110111; //      ***   ***
+            9'h045: data = 8'b00110011; //       **    **
+            9'h046: data = 8'b00010001; //        *     *
+            9'h047: data = 8'b00000000; // (blank line for spacing)
+
         endcase
 
 endmodule
