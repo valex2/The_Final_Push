@@ -127,7 +127,7 @@ module lab5_top(
         .play_button(play),
         .next_button(next),
         .new_frame(new_frame),
-        .stereo_on(1'b0), // change this to be toggleable from switches 
+        .stereo_on(1'b1), // change this to be toggleable from switches 
         .sample_left(left_sample),
         .sample_right(right_sample),
         .new_sample_generated(new_sample)

@@ -51,38 +51,38 @@ module stereo_conditioner(
         endcase
         case(stereo_b) // for data a
             2'b01 : begin  
-                aLeft = 16'd0; 
-                aRight = note_data_b; 
+                bLeft = 16'd0; 
+                bRight = note_data_b; 
             end
             2'b10 : begin 
-                aLeft = note_data_b;
-                aRight = 16'd0; 
+                bLeft = note_data_b;
+                bRight = 16'd0; 
             end
             2'b11 : begin  
-                aLeft = note_data_b;
-                aRight = note_data_b; 
+                bLeft = note_data_b;
+                bRight = note_data_b; 
             end
             default : begin // default do nothing
-                aLeft = 16'd0; 
-                aRight = 16'd0;
+                bLeft = 16'd0; 
+                bRight = 16'd0;
             end
          endcase
          case(stereo_c) 
             2'b01 : begin  
-                aLeft = 16'd0; 
-                aRight = note_data_c; 
+                cLeft = 16'd0; 
+                cRight = note_data_c; 
             end
             2'b10 : begin 
-                aLeft = note_data_c;
-                aRight = 16'd0; 
+                cLeft = note_data_c;
+                cRight = 16'd0; 
             end
             2'b11 : begin  
-                aLeft = note_data_c;
-                aRight = note_data_c; 
+                cLeft = note_data_c;
+                cRight = note_data_c; 
             end
             default : begin // default do nothing
-                aLeft = 16'd0; 
-                aRight = 16'd0;
+                cLeft = 16'd0; 
+                cRight = 16'd0;
             end
         endcase
     end
@@ -96,7 +96,7 @@ module stereo_conditioner(
     );
     
     sample_sum sum_left(
-        .toneOneSample(aLeft>>>2),
+        .toneOneSample(aLeft>>>2), // toggle the two for volume control
         .toneTwoSample(bLeft>>>2),
         .toneThreeSample(cLeft>>>2),
         .toneFourSample(16'b0), // only need 3 channels
