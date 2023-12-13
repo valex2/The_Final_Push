@@ -28,7 +28,8 @@ module music_player(
 
     // Our final output sample to the codec. This needs to be synced to new_frame.
     output wire [15:0] sample_left,
-    output wire [15:0] sample_right
+    output wire [15:0] sample_right,
+    output wire [15:0] sample_normal
 );
     // The BEAT_COUNT is parameterized so you can reduce this in simulation.
     // If you reduce this to 100 your simulation will be 10x faster.
@@ -218,6 +219,7 @@ module music_player(
 //    );
 
       wire [15:0] left_sample, right_sample;
+      wire [15:0] normal_sample;
       stereo_conditioner steroids (
           .note_data_a(note_1_sample),
           .stereo_a(note_1_stereo_out),
@@ -227,6 +229,7 @@ module music_player(
           .stereo_c(note_3_stereo_out),
           .sample_l(left_sample),
           .sample_r(right_sample),
+          .sample_normal(normal_sample),
           .stereo_on(stereo_on),
           .clk(clk)
       );
@@ -269,15 +272,26 @@ module music_player(
         .valid_sample(sample_left)
     );
     
-    wire generate_next_sample_redundant; // captures the output from the unused right codec
+    wire generate_next_sample_redundant_one; // captures the output from the unused right codec
     codec_conditioner codec_conditioner_right(
         .clk(clk),
         .reset(reset),
         .new_sample_in(right_sample),
         .latch_new_sample_in(note_1_sample_ready),
-        .generate_next_sample(generate_next_sample_redundant),
+        .generate_next_sample(generate_next_sample_redundant_one),
         .new_frame(new_frame),
         .valid_sample(sample_right)
+    );
+    
+    wire generate_next_sample_redundant_two;
+    codec_conditioner codec_conditioner_normal(
+        .clk(clk),
+        .reset(reset),
+        .new_sample_in(normal_sample),
+        .latch_new_sample_in(note_1_sample_ready),
+        .generate_next_sample(generate_next_sample_redundant_two),
+        .new_frame(new_frame),
+        .valid_sample(sample_normal)
     );
 
 endmodule

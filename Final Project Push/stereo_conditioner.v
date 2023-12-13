@@ -23,6 +23,7 @@ module stereo_conditioner(
     
     output reg [15:0] sample_l,
     output reg [15:0] sample_r,
+    output wire [15:0] sample_normal,
     
     input wire stereo_on,
     input wire clk
@@ -135,4 +136,6 @@ module stereo_conditioner(
                 end
         endcase
     end
+    
+    assign sample_normal = normal_out;
 endmodule

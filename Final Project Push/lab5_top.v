@@ -121,6 +121,7 @@ module lab5_top(
     wire new_frame;
     wire [15:0] left_sample, flopped_left_sample;
     wire [15:0] right_sample, flopped_right_sample;
+    wire signed [15:0] normal_sample, flopped_normal_sample;
     wire new_sample, flopped_new_sample;
     
     music_player #(.BEAT_COUNT(BEAT_COUNT)) music_player(
@@ -134,12 +135,19 @@ module lab5_top(
         .overtones(overtone_input), // use switches for this eventually
         .sample_left(left_sample),
         .sample_right(right_sample),
+        .sample_normal(normal_sample),
         .new_sample_generated(new_sample)
     );
     dff #(.WIDTH(33)) sample_reg (
         .clk(clk_100),
         .d({new_sample, left_sample, right_sample}),
         .q({flopped_new_sample, flopped_left_sample, flopped_right_sample})
+    );
+    
+    dff #(16) normal_sample_reg (
+        .clk(clk_100),
+        .d(normal_sample),
+        .q(flopped_normal_sample)
     );
 
 //   
@@ -239,7 +247,7 @@ module lab5_top(
 		.clk (clk_100),
 		.reset (reset),
 		.new_sample (new_sample),
-		.sample (flopped_left_sample),
+		.sample (flopped_normal_sample <<< 1),
         .x(x[10:0]),
         .y(y[9:0]),
         //.valid(valid),
