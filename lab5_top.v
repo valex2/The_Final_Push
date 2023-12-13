@@ -81,7 +81,7 @@ module lab5_top(
     
     // Color to display at the given x,y
     wire [31:0] pix_data;
-    wire [3:0]  r, g, b;
+    reg [3:0]  r, g, b;
     wire [7:0] r_1, g_1, b_1;
       
   wire [3:0] VGA_R;
@@ -211,22 +211,35 @@ module lab5_top(
     
     
     
-//    wave_display_top wd_top (
-//		.clk (clk_100),
-//		.reset (reset),
-//		.new_sample (new_sample),
-//		.sample (flopped_sample),
-//        .x(x[10:0]),
-//        .y(y[9:0]),
-//        //.valid(valid),
-//		.valid(vde),
-//		.vsync(vsync),
-//		.r(r_1),
-//		.g(g_1),
-//		.b(b_1)
-//    );
+    wave_display_top wd_top (
+		.clk (clk_100),
+		.reset (reset),
+		.new_sample (new_sample),
+		.sample (flopped_sample),
+        .x(x[10:0]),
+        .y(y[9:0]),
+        //.valid(valid),
+		.valid(vde),
+		.vsync(vsync),
+		.r(r_1),
+		.g(g_1),
+		.b(b_1)
+    );
     
-//    assign r = r_1[7:4];
+    wire [10:0] x_q, y_q;
+    wire [5:0] vga_rgb, rgb_q;
+    always @(*) begin
+        r = r_1[7:4];
+        g = g_1[7:4];
+        b = b_1[7:4];
+        
+        if (rgb_q [5:4] != 0 || rgb_q[3:2] != 0 || rgb_q [1:0] != 0) begin
+            r = {2{rgb_q [5:4]}};
+            g = {2{rgb_q [3:2]}};
+            b = {2{rgb_q [1:0]}};
+        end
+   end
+//    assign r_ = r_1[7:4];
 //    assign g = g_1[7:4];
 //    assign b = b_1[7:4];
 //    assign pix_data = {
@@ -236,14 +249,12 @@ module lab5_top(
 //                        b[3], b[3], b[2], b[2], b[1], b[1], b[0], b[0]
 //                       }; 
    
-    wire [10:0] x_q, y_q;
-    wire [5:0] vga_rgb, rgb_q;
     wire stereo_on, harmonics_on, overtones_on;
     assign stereo_on = 1;
    // VGA Colors
-    assign r = {2{rgb_q [5:4]}};
-    assign g = {2{rgb_q [3:2]}};
-   assign b = {2{rgb_q [1:0]}};
+//   assign r = {2{rgb_q [5:4]}};
+//   assign g = {2{rgb_q [3:2]}};
+//   assign b = {2{rgb_q [1:0]}};
 
     assign pix_data = {
         8'b0,
@@ -280,21 +291,21 @@ module lab5_top(
         .q (y_q)
     );
     
-    dff #(.WIDTH(6)) note_reg (
-        .clk (clk_100), 
-        .d (current_note), 
-        .q (note_q)
-    );
-     dff #(.WIDTH(6)) duration_reg (
-        .clk (clk_100), 
-        .d (note_duration), 
-        .q (duration_q)
-    );
+//    dff #(.WIDTH(6)) note_reg (
+//        .clk (clk_100), 
+//        .d (current_note), 
+//        .q (note_q)
+//    );
+//     dff #(.WIDTH(6)) duration_reg (
+//        .clk (clk_100), 
+//        .d (note_duration), 
+//        .q (duration_q)
+//    );
 	
     // Display Driver
     fpa_vga_driver fpa_vga (
         .clk     (clk_100),
-        .XPos    (x_q),
+        .XPos    (x_q), // x_q
         .YPos    (y_q),
 
 	   .input_note(note_q),
@@ -302,7 +313,6 @@ module lab5_top(
 	   .stereo_on(stereo_on),
 	   .harmonics_on(harmonics_on),
 	   .overtones_on(overtones_on),
-        //.result  (result_q),
 
         //.Valid   (vde),
         .Valid   (1'b1),

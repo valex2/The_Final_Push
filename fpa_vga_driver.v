@@ -11,21 +11,19 @@
 `define TEXT_X_LOC 128
 `define LINE_X_LOC 190
 `define FPA_TEXT_Y_LOC_DIV_32 2 // 64 absolute
-`define CURRENT_TEXT_Y_LOC_DIV_32 6 // 192 absolute
-`define FEATURES_TEXT_Y_LOC_DIV_32 9 // 288 absolute
-`define LINE_Y_LOC  328
+`define CURRENT_TEXT_Y_LOC_DIV_32 12 // 192 absolute
+`define FEATURES_TEXT_Y_LOC_DIV_32 14 // 288 absolute
+`define LINE_Y_LOC  0
 `define LINE_Y_WIDTH 3 
-`define RESULT_TEXT_Y_LOC_DIV_32 11 // 352 absolute
+//`define RESULT_TEXT_Y_LOC_DIV_32 11 // 352 absolute
 
 
 
 module fpa_vga_driver(
     input clk, 
-
-    //input [7:0] aIn,
-    //input [7:0] bIn,
-    //input [7:0] result,
-
+    input [7:0] aIn,
+    input [7:0] bIn,
+    input [7:0] result,
     input [`log2NUM_COLS-1:0] XPos, 
     input [`log2NUM_ROWS-1:0] YPos, 
     input Valid, 
@@ -158,38 +156,59 @@ module fpa_vga_driver(
         case (YPos[`log2NUM_ROWS-1:5])
             // First row of text
             `FPA_TEXT_Y_LOC_DIV_32: begin
-             char_color = 6'b101010;
-             case (XPos_offset[`log2NUM_COLS-1:5])
-             0: char_selection = 6'd16;  // 'P' (16th letter)
-             1: char_selection = 6'd18;  // 'R' (18th letter)
-             2: char_selection = 6'd5;   // 'E' (5th letter)
-             3: char_selection = 6'd22;  // 'V' (22nd letter)
-             4: char_selection = 6'd29;  // ']'
-             5: char_selection = 6'd32;  // ' ' (space)
-             6: char_selection = prev_note_chars[11:6]; // First character of the note
-             7: char_selection = prev_note_chars[5:0];  // Second character of the note
-             default: char_selection = 6'b100000; // Blank for other positions
-            endcase
-        end
-
-        `CURRENT_TEXT_Y_LOC_DIV_32: begin
-            char_color = 6'b111111; // Set the color for the text
-
-            case (XPos_offset[`log2NUM_COLS-1:5])
-                0: char_selection = 6'd03;   // 'C' (3rd letter)
-                1: char_selection = 6'd21;  // 'U' (21st letter)
-                2: char_selection = 6'd18;  // 'R' (18th letter)
-                3: char_selection = 6'd18;  // 'R' (18th letter)
-                4: char_selection = 6'd05;   // 'E' (5th letter)
-                5: char_selection = 6'd14;  // 'N' (14th letter)
-                6: char_selection = 6'd20;  // 'T' (20th letter)
-                7: char_selection = 6'd29;  // ':'
-                8: char_selection = 6'd32;  // ' ' (space)
-                9: char_selection = cur_note_chars[11:6]; // First character of the note
-                10: char_selection = cur_note_chars[5:0]; // Second character of the note
+               char_color = 6'b101111;
+               case (XPos_offset[`log2NUM_COLS-1:5])
+                0: char_selection = 6'd14;  // 'N'
+                1: char_selection = 6'd15;  // 'O'
+                2: char_selection = 6'd20;   // 'T' (5th letter)
+                3: char_selection = 6'd22;  // 'E' (22nd letter)
+                4: char_selection = 6'd45;  // 'S'
+                5: char_selection = 6'd32;  // ' ' (space)
+                6: char_selection = prev_note_chars[11:6]; // First character of the note
+                7: char_selection = prev_note_chars[5:0];  // Second character of the note
+                8: char_selection = 6'd33;  // ' ' (space)
+                9: char_selection = 6'd32;  // ' ' (space)
+                10: char_selection = cur_note_chars[11:6]; // First character of the note
+                11: char_selection = cur_note_chars[5:0];  // Second character of the note
+                12: char_selection = 6'd32; //space
+                13: char_selection = cur_note_chars[11:6]; // First character of the note
+                14: char_selection = cur_note_chars[5:0];  // Second character of the note
                 default: char_selection = 6'b100000; // Blank for other positions
             endcase
-        end
+      end
+
+//             char_color = 6'b101010;
+//             case (XPos_offset[`log2NUM_COLS-1:5])
+//             0: char_selection = 6'd16;  // 'P' (16th letter)
+//             1: char_selection = 6'd18;  // 'L' (18th letter)
+//             2: char_selection = 6'd5;   // 'E' (5th letter)
+//             3: char_selection = 6'd22;  // 'V' (22nd letter)
+//             4: char_selection = 6'd45;  // ''
+//             5: char_selection = 6'd32;  // ' ' (space)
+//             6: char_selection = prev_note_chars[11:6]; // First character of the note
+//             7: char_selection = prev_note_chars[5:0];  // Second character of the note
+//             default: char_selection = 6'b100000; // Blank for other positions
+//            endcase
+//        end
+
+//        `CURRENT_TEXT_Y_LOC_DIV_32: begin
+//            char_color = 6'b111111; // Set the color for the text
+
+//            case (XPos_offset[`log2NUM_COLS-1:5])
+//                0: char_selection = 6'd03;   // 'C' (3rd letter)
+//                1: char_selection = 6'd21;  // 'U' (21st letter)
+//                2: char_selection = 6'd18;  // 'R' (18th letter)
+//                3: char_selection = 6'd18;  // 'R' (18th letter)
+//                4: char_selection = 6'd05;   // 'E' (5th letter)
+//                5: char_selection = 6'd14;  // 'N' (14th letter)
+//                6: char_selection = 6'd20;  // 'T' (20th letter)
+//                7: char_selection = 6'd45;  // '-'
+//                8: char_selection = 6'd32;  // ' ' (space)
+//                9: char_selection = cur_note_chars[11:6]; // First character of the note
+//                10: char_selection = cur_note_chars[5:0]; // Second character of the note
+//                default: char_selection = 6'b100000; // Blank for other positions
+//            endcase
+//        end
         
         `FEATURES_TEXT_Y_LOC_DIV_32: begin
             char_color = 6'b111111; // Set the color for the text
@@ -229,7 +248,7 @@ module fpa_vga_driver(
                 22: char_selection = overtones_on ? 6'd15 : 6'b100000;// 'O' (15th letter)
                 23: char_selection = overtones_on ? 6'd14 : 6'b100000;// 'N' (14th letter)
                 24: char_selection = overtones_on ? 6'd5 : 6'b100000; // 'E' (5th letter)
-                25: char_selection = overtones_on ? 6'd19 : 6'b100000;// 'S' (19th letter)
+                25: char_selection = overtones_on ? 6'd50: 6'b100000;// 'S' (19th letter)
         
                 default: char_selection = 6'b100000; // Blank for other positions
             endcase
@@ -239,7 +258,7 @@ end
 
 
 
-    // Add the addition horizontal line
+     //Add the addition horizontal line
     assign lineValid  = (XPos >= `LINE_X_LOC)
                      && (XPos <= `LINE_X_LOC + 512)
                      && (YPos >= `LINE_Y_LOC)
