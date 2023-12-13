@@ -30,6 +30,7 @@ module lab5_top(
     output wire [2:0] leds_rgb_1,
 
     input [2:0] btn,
+    input [7:0] sw,
 
     /* 
     //VGA OUTPUT 
@@ -48,6 +49,7 @@ module lab5_top(
     // TODO: output LED0 onto something
   
 );  
+    wire overtone_input = {sw[5], sw[4], sw[3], sw[2]}; // 0000 (max volue), where msb is fundamental
 
     wire reset, play_button, next_button;
     assign {reset, play_button, next_button} = btn;
@@ -117,25 +119,30 @@ module lab5_top(
 //  ****************************************************************************
 //       
     wire new_frame;
-    wire [15:0] codec_sample, flopped_sample, other_boi;
+    wire [15:0] left_sample, flopped_left_sample;
+    wire [15:0] right_sample, flopped_right_sample;
     wire new_sample, flopped_new_sample;
+    
     music_player #(.BEAT_COUNT(BEAT_COUNT)) music_player(
         .clk(clk_100),
         .reset(reset),
         .play_button(play),
         .next_button(next),
-        .new_frame(new_frame), 
-        .sample_left(codec_sample),
-        .sample_right(other_boi),
+        .new_frame(new_frame),
+        .stereo_on(sw[7]), 
+        .harmonics_on(sw[6]),
+        .overtones(overtone_input), // use switches for this eventually
+        .sample_left(left_sample),
+        .sample_right(right_sample),
         .new_sample_generated(new_sample)
     );
-    dff #(.WIDTH(17)) sample_reg (
+    dff #(.WIDTH(33)) sample_reg (
         .clk(clk_100),
-        .d({new_sample, codec_sample}),
-        .q({flopped_new_sample, flopped_sample})
+        .d({new_sample, left_sample, right_sample}),
+        .q({flopped_new_sample, flopped_left_sample, flopped_right_sample})
     );
 
-
+//   
 //  ****************************************************************************
 //      Codec interface
 //  ****************************************************************************
@@ -145,22 +152,29 @@ module lab5_top(
 	wire [23:0] line_in_r =  0; 
 	
     // Output the sample onto the LEDs for the fun of it.
-    assign leds_rgb_0 = codec_sample[15:13];
-    assign leds_rgb_1 = codec_sample[11:9];
-    //assign led = codec_sample[15:12];
-    wire [7:0] led_duty_cycle;
-    assign led_duty_cycle = codec_sample[15:12];
-    pwm #(.WIDTH(8)) pwm_led1 (
-        .clk(sysclk),
-        .duty(led_duty_cycle),
-        .pwm_signal(led[0])
-   );
-    pwm #(.WIDTH(8)) pwm_led2 (
-        .clk(sysclk),
-        .duty(led_duty_cycle*2),
-        .pwm_signal(led[1])
-   );
+//    assign leds_rgb_0 = left_sample[15:13];
+//    assign leds_rgb_1 = left_sample[11:9];
+//    assign led = left_sample[15:12];
 
+    //assign led = codec_sample[15:12];
+    wire [3:0] led_duty_cycle;
+    wire pwm_signal, rgb_pwm_signal;
+    assign led_duty_cycle = overtone_input;
+    pwm #(.WIDTH(4)) pwm_led (
+        .clk(sysclk),
+        .enable(1'b1), // turns on rgbs when harmonics are on
+        .duty(led_duty_cycle),
+        .pwm_signal(pwm_signal)
+   );
+   assign led = pwm_signal;
+   pwm #(.WIDTH(4)) pwm_rgb0 (
+        .clk(sysclk),
+        .enable(sw[6]), // turns on rgbs when harmonics are on
+        .duty(led_duty_cycle*2),
+        .pwm_signal(rgb_pwm_signal)
+   );
+    assign leds_rgb_0 = rgb_pwm_signal;
+    assign leds_rgb_1 = rgb_pwm_signal;
     adau1761_codec adau1761_codec(
         .clk_100(clk_100),
         .reset(reset),
@@ -173,8 +187,8 @@ module lab5_top(
         .AC_MCLK(AC_MCLK),
         .AC_SCK(AC_SCK),
         .AC_SDA(AC_SDA),
-        .hphone_l({codec_sample, 8'h00}),// sample_l
-        .hphone_r({other_boi, 8'h00}), // sample_r, 8'h00 
+        .hphone_l({left_sample, 8'h00}),
+        .hphone_r({right_sample, 8'h00}),
         .line_in_l(line_in_l),
         .line_in_r(line_in_r),
         .new_sample(new_frame)
@@ -224,7 +238,7 @@ module lab5_top(
 		.clk (clk_100),
 		.reset (reset),
 		.new_sample (new_sample),
-		.sample (flopped_sample),
+		.sample (flopped_left_sample),
         .x(x[10:0]),
         .y(y[9:0]),
         //.valid(valid),

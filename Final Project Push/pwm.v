@@ -21,11 +21,12 @@
 
 
 module pwm #(
-    parameter WIDTH = 8 // Number of bits for PWM resolution
+    parameter WIDTH = 4
 )(
     input wire clk,               // Clock input
     input wire reset,             // Asynchronous reset
     input wire [WIDTH-1:0] duty,  // Duty cycle input
+    input wire enable,
     output wire pwm_signal        // PWM output signal
 );
 
@@ -46,8 +47,7 @@ module pwm #(
         .q(counter)
     );
 
-    // PWM comparator logic
-    // The pwm_signal is high when the counter is less than the duty value
-    assign pwm_signal = (counter < duty);
+    // PWM logic
+    assign pwm_signal = enable && (counter < duty);
 
 endmodule
