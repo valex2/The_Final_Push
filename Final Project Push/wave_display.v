@@ -13,12 +13,19 @@ module wave_display (
     output wire [7:0] b
 );
 
-// Implement me! -- NO, begone!
 wire [1:0] quadrant_pos = x[9:8]; // part of the logic that makes sure we don't write to quadrant 1 or 4 of the display
 
 assign read_address = {read_index, x[9], x[7:1]}; // a 9 bit address
 
 wire [8:0] prev_address;
+
+//angelina edits
+wire signed [7:0] delta_y;
+wire signed [10:0] delta_x;
+wire signed [18:0] slope; // Q8.10 fixed-point format for slope
+wire signed [18:0] error; // Distance from the ideal line
+
+    
 dffr #(9) addressor ( // used to remember previous read_address in order to compare it to the current one
     .clk(clk),
     .r(reset),
@@ -67,10 +74,24 @@ wire valid_quadrant = ~((quadrant_pos == 2'b00) | (quadrant_pos == 2'b11) | (y[9
 
 assign valid_pixel = (valid & valid_quadrant & want_pixel & ({x[9], x[7:1]} > 8'd2) &({x[9], x[7:1]} < 8'd253)); // if the y_val is between the read values in the RAM, and we are in the right quadrant, and the right part of the screen, write to the display
 
-assign r = 8'd255;
-assign g = 8'd0;
-assign b = 8'd0;
+// anti-aliasing: calculate intensity of various pixels
+assign delta_y = curr_value - prev_value;
+assign delta_x = x - prev_x; // storing previous x value
 
+// Calculate the slope 
+assign slope = (delta_x != 0) ? (delta_y << 10) / delta_x : 0;
+
+// For each pixel, calculate the error distance from the ideal line
+assign error = (y << 10) - (prev_y << 10) - (slope * (x - prev_x));
+
+// determine intensity based on distance from ideal line
+wire [7:0] intensity;
+assign intensity = (error > -512 && error < 512) ? (512 - abs(error)) >> 2 : 0;
+
+// set color of pixel according to intensity
+assign r = intensity;
+assign g = intensity;
+assign b = intensity;
 
 
 //reg [29:0] next_color;
