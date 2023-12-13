@@ -217,22 +217,22 @@ set_property -dict {PACKAGE_PIN J18 IOSTANDARD TMDS_33} [get_ports {TMDS_Data_p[
 # create_clock -add -name clk12_pin -period 83.333 -waveform {0 41.667} [get_ports clk12]
  
 ## Switches maps to SWA (sw[0]) to SWH (sw[7])
- set_property PACKAGE_PIN V6 [get_ports {sw[0]}];	#RPIO_14_R, connector Pin 8, FPGA Signal name RP_IO02				
- 	set_property IOSTANDARD LVCMOS33 [get_ports {sw[0]}]
- set_property PACKAGE_PIN Y6 [get_ports {sw[1]}];	#RPIO_15_R, connector Pin 10, FPGA Signal name RP_IO10					
- 	set_property IOSTANDARD LVCMOS33 [get_ports {sw[1]}]
- set_property PACKAGE_PIN B19 [get_ports {sw[2]}];	#RPIO_16_R, connector Pin 36, FPGA Signal name RP_IO20					
- 	set_property IOSTANDARD LVCMOS33 [get_ports {sw[2]}]
- set_property PACKAGE_PIN U7 [get_ports {sw[3]}];	#RPIO_17_R, connector Pin 11, FPGA Signal name RP_IO03					
- 	set_property IOSTANDARD LVCMOS33 [get_ports {sw[3]}]
- set_property PACKAGE_PIN C20 [get_ports {sw[4]}];	#RPIO_18_R, connector Pin 12, FPGA Signal name RP_IO18					
- 	set_property IOSTANDARD LVCMOS33 [get_ports {sw[4]}]
- set_property PACKAGE_PIN Y8 [get_ports {sw[5]}];	#RPIO_19_R, connector Pin 35, FPGA Signal name RP_IO13					
- 	set_property IOSTANDARD LVCMOS33 [get_ports {sw[5]}]
- set_property PACKAGE_PIN A20 [get_ports {sw[6]}];	#RPIO_20_R, connector Pin 38, FPGA Signal name RP_IO21					
- 	set_property IOSTANDARD LVCMOS33 [get_ports {sw[6]}]
- set_property PACKAGE_PIN W9 [get_ports {sw[7]}];	#RPIO_26_R, connector Pin 37, FPGA Signal name RP_IO14					
- 	set_property IOSTANDARD LVCMOS33 [get_ports {sw[7]}]
+# set_property PACKAGE_PIN V6 [get_ports {sw[0]}];	#RPIO_14_R, connector Pin 8, FPGA Signal name RP_IO02				
+# 	set_property IOSTANDARD LVCMOS33 [get_ports {sw[0]}]
+# set_property PACKAGE_PIN Y6 [get_ports {sw[1]}];	#RPIO_15_R, connector Pin 10, FPGA Signal name RP_IO10					
+# 	set_property IOSTANDARD LVCMOS33 [get_ports {sw[1]}]
+# set_property PACKAGE_PIN B19 [get_ports {sw[2]}];	#RPIO_16_R, connector Pin 36, FPGA Signal name RP_IO20					
+# 	set_property IOSTANDARD LVCMOS33 [get_ports {sw[2]}]
+# set_property PACKAGE_PIN U7 [get_ports {sw[3]}];	#RPIO_17_R, connector Pin 11, FPGA Signal name RP_IO03					
+# 	set_property IOSTANDARD LVCMOS33 [get_ports {sw[3]}]
+# set_property PACKAGE_PIN C20 [get_ports {sw[4]}];	#RPIO_18_R, connector Pin 12, FPGA Signal name RP_IO18					
+# 	set_property IOSTANDARD LVCMOS33 [get_ports {sw[4]}]
+# set_property PACKAGE_PIN Y8 [get_ports {sw[5]}];	#RPIO_19_R, connector Pin 35, FPGA Signal name RP_IO13					
+# 	set_property IOSTANDARD LVCMOS33 [get_ports {sw[5]}]
+# set_property PACKAGE_PIN A20 [get_ports {sw[6]}];	#RPIO_20_R, connector Pin 38, FPGA Signal name RP_IO21					
+# 	set_property IOSTANDARD LVCMOS33 [get_ports {sw[6]}]
+# set_property PACKAGE_PIN W9 [get_ports {sw[7]}];	#RPIO_26_R, connector Pin 37, FPGA Signal name RP_IO14					
+# 	set_property IOSTANDARD LVCMOS33 [get_ports {sw[7]}]
 
 # set_property PACKAGE_PIN M20 [get_ports {enable}];   #Board SW0					
 # 	set_property IOSTANDARD LVCMOS33 [get_ports {enable}]

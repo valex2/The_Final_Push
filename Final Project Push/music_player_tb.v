@@ -1,7 +1,8 @@
 module music_player_tb();
     reg clk, reset, next_button, play_button;
     wire new_frame;
-    wire [15:0] left_sample, right_sample;
+    wire [15:0] sample;
+    wire [5:0] current_note_1, current_note_duration_1, current_note_2,current_note_duration_2, current_note_3, current_note_duration_3;
 
     music_player #(.BEAT_COUNT(500)) music_player(
         .clk(clk),
@@ -9,11 +10,13 @@ module music_player_tb();
         .next_button(next_button),
         .play_button(play_button),
         .new_frame(new_frame),
-        .stereo_on(1'b0),
-        .harmonics_on(1'b0),
-        .overtones(4'd0),
-        .sample_left(left_sample),
-        .sample_right(right_sample)
+        .sample_out(sample),
+        .current_note_1(current_note_1),
+        .current_note_duration_1(current_note_duration_1),
+        .current_note_2(current_note_2),
+        .current_note_duration_2(current_note_duration_2),
+        .current_note_3(current_note_3),
+        .current_note_duration_3(current_note_duration_3)
     );
 
     // AC97 interface
@@ -25,8 +28,8 @@ module music_player_tb();
     ac97_if codec(
         .Reset(1'b0), // Reset MUST be shorted to 1'b0
         .ClkIn(clk),
-        .PCM_Playback_Left(left_sample),   // Set these two to different
-        .PCM_Playback_Right(right_sample),  // samples to have stereo audio!
+        .PCM_Playback_Left(sample),   // Set these two to different
+        .PCM_Playback_Right(sample),  // samples to have stereo audio!
         .PCM_Record_Left(),
         .PCM_Record_Right(),
         .PCM_Record_Valid(),

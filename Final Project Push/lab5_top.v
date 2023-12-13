@@ -30,7 +30,6 @@ module lab5_top(
     output wire [2:0] leds_rgb_1,
 
     input [2:0] btn,
-    input [7:0] sw,
 
     /* 
     //VGA OUTPUT 
@@ -49,7 +48,6 @@ module lab5_top(
     // TODO: output LED0 onto something
   
 );  
-    wire [3:0] overtone_input = {sw[5], sw[4], sw[3], sw[2]}; // 0000 (max volue), where msb is fundamental
 
     wire reset, play_button, next_button;
     assign {reset, play_button, next_button} = btn;
@@ -68,27 +66,7 @@ module lab5_top(
     );
 
 
-    /////////// LEDS ///////////
-    //assign led = codec_sample[15:12];
-    wire [3:0] led_duty_cycle;
-    assign led_duty_cycle = overtone_input;
-    
-    wire pwm_signal, rgb_pwm_signal;
-    pwm pwm_led (
-        .clk(clk_100),
-        .duty(led_duty_cycle),
-        .pwm_signal(pwm_signal)
-   );
-   assign led = {pwm_signal, pwm_signal, pwm_signal, pwm_signal};
-   
-   pwm pwm_rgb0 (
-        .clk(clk_100),
-        .duty(led_duty_cycle),
-        .pwm_signal(rgb_pwm_signal)
-   );
-    assign leds_rgb_0 = {rgb_pwm_signal, rgb_pwm_signal, rgb_pwm_signal};
-    assign leds_rgb_1 = {rgb_pwm_signal, rgb_pwm_signal, rgb_pwm_signal};
-
+  
     // button_press_unit's WIDTH parameter is exposed here so that you can
     // reduce it in simulation.  Setting it to 1 effectively disables it.
     parameter BPU_WIDTH = 20;
@@ -103,7 +81,7 @@ module lab5_top(
     
     // Color to display at the given x,y
     wire [31:0] pix_data;
-    wire [3:0]  r, g, b;
+    reg [3:0]  r, g, b;
     wire [7:0] r_1, g_1, b_1;
       
   wire [3:0] VGA_R;
@@ -139,35 +117,34 @@ module lab5_top(
 //  ****************************************************************************
 //       
     wire new_frame;
-    wire [15:0] left_sample, flopped_left_sample;
-    wire [15:0] right_sample, flopped_right_sample;
-    wire signed [15:0] normal_sample, flopped_normal_sample;
+    wire [15:0] codec_sample, flopped_sample;
     wire new_sample, flopped_new_sample;
-    
+    wire [5:0] current_note1, note_duration1, current_note2, note_duration2, current_note3, note_duration3;
+    wire note_1_load, note_2_load, note_3_load;
+    //wire [5:0] note_q, duration_q;
     music_player #(.BEAT_COUNT(BEAT_COUNT)) music_player(
         .clk(clk_100),
         .reset(reset),
         .play_button(play),
         .next_button(next),
-        .new_frame(new_frame),
-        .stereo_on(sw[7]), 
-        .harmonics_on(sw[6]),
-        .overtones(overtone_input), // use switches for this eventually
-        .sample_left(left_sample),
-        .sample_right(right_sample),
-        .sample_normal(normal_sample),
-        .new_sample_generated(new_sample)
-    );
-    dff #(.WIDTH(33)) sample_reg (
-        .clk(clk_100),
-        .d({new_sample, left_sample, right_sample}),
-        .q({flopped_new_sample, flopped_left_sample, flopped_right_sample})
+        .new_frame(new_frame), 
+        .sample_out(codec_sample),
+        .new_sample_generated(new_sample),
+        .current_note_1(current_note1),
+        .current_note_duration_1(note_duration1),
+        .new_note_available_1(note_1_load),
+        .current_note_2(current_note2),
+        .current_note_duration_2(note_duration2),
+        .new_note_available_2(note_2_load),
+        .current_note_3(current_note3),
+        .current_note_duration_3(note_duration3),
+        .new_note_available_3(note_3_load)
     );
     
-    dff #(16) normal_sample_reg (
+    dff #(.WIDTH(17)) sample_reg (
         .clk(clk_100),
-        .d(normal_sample),
-        .q(flopped_normal_sample)
+        .d({new_sample, codec_sample}),
+        .q({flopped_new_sample, flopped_sample})
     );
 
 //   
@@ -180,10 +157,10 @@ module lab5_top(
 	wire [23:0] line_in_r =  0; 
 	
     // Output the sample onto the LEDs for the fun of it.
-//    assign leds_rgb_0 = left_sample[15:13];
-//    assign leds_rgb_1 = left_sample[11:9];
-//    assign led = left_sample[15:12];
-    
+    assign leds_rgb_0 = codec_sample[15:13];
+    assign leds_rgb_1 = codec_sample[11:9];
+    assign led = codec_sample[15:12];
+
     adau1761_codec adau1761_codec(
         .clk_100(clk_100),
         .reset(reset),
@@ -196,8 +173,8 @@ module lab5_top(
         .AC_MCLK(AC_MCLK),
         .AC_SCK(AC_SCK),
         .AC_SDA(AC_SDA),
-        .hphone_l({left_sample, 8'h00}),
-        .hphone_r({right_sample, 8'h00}),
+        .hphone_l({codec_sample, 8'h00}),
+        .hphone_r(hphone_r),
         .line_in_l(line_in_l),
         .line_in_r(line_in_r),
         .new_sample(new_frame)
@@ -247,7 +224,7 @@ module lab5_top(
 		.clk (clk_100),
 		.reset (reset),
 		.new_sample (new_sample),
-		.sample (flopped_normal_sample <<< 1),
+		.sample (flopped_sample),
         .x(x[10:0]),
         .y(y[9:0]),
         //.valid(valid),
@@ -258,16 +235,47 @@ module lab5_top(
 		.b(b_1)
     );
     
-    assign r = r_1[7:4];
-    assign g = g_1[7:4];
-    assign b = b_1[7:4];
+    wire [10:0] x_q, y_q;
+    wire [5:0] vga_rgb, rgb_q;
+    always @(*) begin
+        r = r_1[7:4];
+        g = g_1[7:4];
+        b = b_1[7:4];
+        
+        if (rgb_q [5:4] != 0 || rgb_q[3:2] != 0 || rgb_q [1:0] != 0) begin
+            r = {2{rgb_q [5:4]}};
+            g = {2{rgb_q [3:2]}};
+            b = {2{rgb_q [1:0]}};
+        end
+   end
+//    assign r_ = r_1[7:4];
+//    assign g = g_1[7:4];
+//    assign b = b_1[7:4];
+//    assign pix_data = {
+//                        8'b0, 
+//                        r[3], r[3], r[2], r[2], r[1], r[1], r[0], r[0],
+//                        g[3], g[3], g[2], g[2], g[1], g[1], g[0], g[0],
+//                        b[3], b[3], b[2], b[2], b[1], b[1], b[0], b[0]
+//                       }; 
+   
+    wire stereo_on, harmonics_on, overtones_on;
+    wire [3:0] overtones;
+    assign overtones = 4'b1011;
+    assign stereo_on = 1;
+    assign overtones_on = 1;
+    //assign harmonics_on = 0;
+   // VGA Colors
+//   assign r = {2{rgb_q [5:4]}};
+//   assign g = {2{rgb_q [3:2]}};
+//   assign b = {2{rgb_q [1:0]}};
+
     assign pix_data = {
-                        8'b0, 
-                        r[3], r[3], r[2], r[2], r[1], r[1], r[0], r[0],
-                        g[3], g[3], g[2], g[2], g[1], g[1], g[0], g[0],
-                        b[3], b[3], b[2], b[2], b[1], b[1], b[0], b[0]
-                       }; 
-                  
+        8'b0,
+        r[3], r[3], r[2], r[2], r[1], r[1], r[0], r[0],
+        g[3], g[3], g[2], g[2], g[1], g[1], g[0], g[0],
+        b[3], b[3], b[2], b[2], b[1], b[1], b[0], b[0]
+    };
+    
     hdmi_tx_0 U3 (
         .pix_clk(display_clk),
         .pix_clkx5(serial_clk),
@@ -282,7 +290,101 @@ module lab5_top(
         .TMDS_DATA_P(TMDS_Data_p),
         .TMDS_DATA_N(TMDS_Data_n)
     );
-   
+
+    
+	dff #(.WIDTH (11)) x_dff (
+        .clk (clk_100),
+        .d (x),
+        .q (x_q)
+    );
+ 
+	dff #(.WIDTH (11)) y_dff (
+        .clk (clk_100),
+        .d (y),
+        .q (y_q)
+    );
+    
+//    dff #(.WIDTH(6)) note_reg (
+//        .clk (clk_100), 
+//        .d (current_note), 
+//        .q (note_q)
+//    );
+//     dff #(.WIDTH(6)) duration_reg (
+//        .clk (clk_100), 
+//        .d (note_duration), 
+//        .q (duration_q)
+//    );
+	wire [5:0] note_duration1_d1, note_duration1_d2, note_duration1_d3,note_duration2_d1, note_duration2_d2, note_duration2_d3, note_duration3_d1, note_duration3_d2, note_duration3_d3;
+    wire [5:0] current_note1_d1, current_note1_d2, current_note1_d3, current_note2_d1, current_note2_d2, current_note2_d3,current_note3_d1, current_note3_d2, current_note3_d3;
+//    assign current_note1_d1 = current_note1;
+//    assign current_note2_d1 = current_note2;
+//    assign current_note3_d1 = current_note3;
+    // Delay for note_duration
+    dff #(.WIDTH(6)) delay_note1_duration_1 (.clk(clk_100), .d(note_duration1), .q(note_duration1_d1));
+    dff #(.WIDTH(6)) delay_note1_duration_2 (.clk(clk_100), .d(note_duration1_d1), .q(note_duration1_d2));
+    dff #(.WIDTH(6)) delay_note1_duration_3 (.clk(clk_100), .d(note_duration1_d2), .q(note_duration1_d3));
+    
+    // Delay for current_note
+    dff #(.WIDTH(6)) delay_current_note1_1 (.clk(clk_100), .d(current_note1), .q(current_note1_d1));
+    dff #(.WIDTH(6)) delay_current_note1_2 (.clk(clk_100), .d(current_note1_d1), .q(current_note1_d2));
+    dff #(.WIDTH(6)) delay_current_note1_3 (.clk(clk_100), .d(current_note1_d2), .q(current_note1_d3));
+
+    // Delay for note_duration
+    dff #(.WIDTH(6)) delay_note2_duration_1 (.clk(clk_100), .d(note_duration2), .q(note_duration2_d1));
+    dff #(.WIDTH(6)) delay_note2_duration_2 (.clk(clk_100), .d(note_duration2_d1), .q(note_duration2_d2));
+    dff #(.WIDTH(6)) delay_note2_duration_3 (.clk(clk_100), .d(note_duration2_d2), .q(note_duration2_d3));
+    
+    // Delay for current_note
+    dff #(.WIDTH(6)) delay_current_note2_1 (.clk(clk_100), .d(current_note2), .q(current_note2_d1));
+    dff #(.WIDTH(6)) delay_current_note2_2 (.clk(clk_100), .d(current_note2_d1), .q(current_note2_d2));
+    dff #(.WIDTH(6)) delay_current_note2_3 (.clk(clk_100), .d(current_note2_d2), .q(current_note2_d3));
+
+    // Delay for note_duration
+    dff #(.WIDTH(6)) delay_note3_duration_1 (.clk(clk_100), .d(note_duration3), .q(note_duration1_d1));
+    dff #(.WIDTH(6)) delay_note3_duration_2 (.clk(clk_100), .d(note_duration3_d1), .q(note_duration1_d2));
+    dff #(.WIDTH(6)) delay_note3_duration_3 (.clk(clk_100), .d(note_duration3_d2), .q(note_duration1_d3));
+    
+    // Delay for current_note
+    dff #(.WIDTH(6)) delay_current_note3_1 (.clk(clk_100), .d(current_note3), .q(current_note3_d1));
+    dff #(.WIDTH(6)) delay_current_note3_2 (.clk(clk_100), .d(current_note3_d1), .q(current_note3_d2));
+    dff #(.WIDTH(6)) delay_current_note3_3 (.clk(clk_100), .d(current_note2_d2), .q(current_note3_d3));
+
+    // Display Driver
+    fpa_vga_driver fpa_vga (
+        .clk     (clk_100),
+        .XPos    (x_q), // x_q
+        .YPos    (y_q),
+
+	   .input_note1(current_note1_d3),
+	   .note_duration1(note_duration1_d3),
+	   .new_note_available_1(note_1_load),
+	   
+	   .input_note2(current_note2_d3),
+	   .note_duration2(note_duration2_d3),
+	   .new_note_available_2(note_2_load),
+	   
+	   .input_note3(current_note3_d3),
+	   .note_duration3(note_duration3_d3),
+	   .new_note_available_3(note_3_load),
+	   
+	   .play_button(play),
+	   .next_button(next),
+	   .stereo_on(stereo_on),
+	   .harmonics_on(harmonics_on),
+	   .overtones_on(overtones_on),
+       .overtones(overtones),
+        //.Valid   (vde),
+        .Valid   (1'b1),
+
+        .vga_rgb (vga_rgb)
+    );
+ 
+    dff #(.WIDTH (6)) rgb_dff (
+        .clk (clk_100),
+        .d (vga_rgb),
+        .q (rgb_q)
+    );
+
    
 endmodule
 
