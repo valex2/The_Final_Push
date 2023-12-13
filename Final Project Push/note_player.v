@@ -192,7 +192,7 @@ module note_player(
         .generate_next(generate_next && harmonics_on),
         .sample(toneFourSample)
     );
-    sample_sum blendTones(.toneOneSample(toneOneSample>>>overtones[0]), .toneTwoSample(toneTwoSample>>>overtones[1]), .toneThreeSample(toneThreeSample>>>overtones[2]), .toneFourSample(toneFourSample>>>overtones[3]), .summed_output(summed_output)); // shifts right by 2
+    sample_sum blendTones(.toneOneSample(toneOneSample>>>overtones[0]), .toneTwoSample(toneFourSample>>>overtones[3]), .toneThreeSample(toneThreeSample>>>overtones[2]), .toneFourSample(toneOneSample>>>overtones[0]), .summed_output(summed_output)); // shifts right by 2
 
     assign sample_out = summed_output;
 endmodule
