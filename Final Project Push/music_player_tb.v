@@ -10,7 +10,7 @@ module music_player_tb();
         .play_button(play_button),
         .new_frame(new_frame),
         .stereo_on(1'b0),
-        .harmonics_on(1'b1),
+        .harmonics_on(1'b0),
         .overtones(4'd0),
         .sample_left(left_sample),
         .sample_right(right_sample)

@@ -153,7 +153,7 @@ module music_player(
         .load_new_note(note_1_load),
         .done_with_note(note_1_done),
         .beat(beat),
-        .generate_next_sample(generate_next_sample),
+        .generate_next_sample(new_sample_generated),
         .sample_out(note_1_sample),
         .new_sample_ready(note_1_sample_ready),
         .stereo_side_out(note_1_stereo_out),
@@ -174,7 +174,7 @@ module music_player(
         .load_new_note(note_2_load),
         .done_with_note(note_2_done),
         .beat(beat),
-        .generate_next_sample(generate_next_sample),
+        .generate_next_sample(new_sample_generated),
         .sample_out(note_2_sample),
         .new_sample_ready(note_2_sample_ready),
         .stereo_side_out(note_2_stereo_out),
@@ -195,7 +195,7 @@ module music_player(
         .load_new_note(note_3_load),
         .done_with_note(note_3_done),
         .beat(beat),
-        .generate_next_sample(generate_next_sample),
+        .generate_next_sample(new_sample_generated),
         .sample_out(note_3_sample),
         .new_sample_ready(note_3_sample_ready),
         .stereo_side_out(note_3_stereo_out),
@@ -227,7 +227,8 @@ module music_player(
           .stereo_c(note_3_stereo_out),
           .sample_l(left_sample),
           .sample_r(right_sample),
-          .stereo_on(stereo_on)
+          .stereo_on(stereo_on),
+          .clk(clk)
       );
 
 //   
@@ -250,7 +251,14 @@ module music_player(
 //      Codec Conditioner
 //  ****************************************************************************
 //  need to sync stuff to a new frame
-    assign new_sample_generated = generate_next_sample;
+//    assign new_sample_generated = generate_next_sample;
+    
+    dff #(1) generate_delay( // adds slack to the system to avoid timing violations
+        .clk(clk),
+        .d(generate_next_sample),
+        .q(new_sample_generated)
+    );
+    
     codec_conditioner codec_conditioner_left(
         .clk(clk),
         .reset(reset),

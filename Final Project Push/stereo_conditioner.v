@@ -24,27 +24,33 @@ module stereo_conditioner(
     output reg [15:0] sample_l,
     output reg [15:0] sample_r,
     
-    input wire stereo_on
+    input wire stereo_on,
+    input wire clk
     );
     
     reg signed [15:0] aLeft,bLeft,cLeft,aRight,bRight,cRight; // 16 bit muxes
     wire [15:0] normal_out, left_out, right_out;
     
-    
+    wire signed [15:0] latched_a, latched_b, latched_c;
+    dff #(48) timing_fixer( // adds slack to the system to avoid timing violations
+        .clk(clk),
+        .d({note_data_a, note_data_b, note_data_c}),
+        .q({latched_a, latched_b, latched_c})
+    );
     
     always @(*) begin
         case(stereo_a) // for data a
             2'b01 : begin  // 0 = right
                 aLeft = 16'd0; 
-                aRight = note_data_a; 
+                aRight = latched_a; 
             end
             2'b10 : begin  // 1 = left
-                aLeft = note_data_a;
+                aLeft = latched_a;
                 aRight = 16'd0; 
             end
             2'b11 : begin  // 1 = left
-                aLeft = note_data_a;
-                aRight = note_data_a; 
+                aLeft = latched_a;
+                aRight = latched_a; 
             end
             default : begin // default do nothing
                 aLeft = 16'd0; 
@@ -54,15 +60,15 @@ module stereo_conditioner(
         case(stereo_b) // for data a
             2'b01 : begin  
                 bLeft = 16'd0; 
-                bRight = note_data_b; 
+                bRight = latched_b; 
             end
             2'b10 : begin 
-                bLeft = note_data_b;
+                bLeft = latched_b;
                 bRight = 16'd0; 
             end
             2'b11 : begin  
-                bLeft = note_data_b;
-                bRight = note_data_b; 
+                bLeft = latched_b;
+                bRight = latched_b; 
             end
             default : begin // default do nothing
                 bLeft = 16'd0; 
@@ -72,15 +78,15 @@ module stereo_conditioner(
          case(stereo_c) 
             2'b01 : begin  
                 cLeft = 16'd0; 
-                cRight = note_data_c; 
+                cRight = latched_c; 
             end
             2'b10 : begin 
-                cLeft = note_data_c;
+                cLeft = latched_c;
                 cRight = 16'd0; 
             end
             2'b11 : begin  
-                cLeft = note_data_c;
-                cRight = note_data_c; 
+                cLeft = latched_c;
+                cRight = latched_c; 
             end
             default : begin // default do nothing
                 cLeft = 16'd0; 
@@ -90,9 +96,9 @@ module stereo_conditioner(
     end
     
    sample_sum unbothered_king( 
-        .toneOneSample(note_data_a),
-        .toneTwoSample(note_data_b),
-        .toneThreeSample(note_data_c),
+        .toneOneSample(latched_a),
+        .toneTwoSample(latched_b),
+        .toneThreeSample(latched_c),
         .toneFourSample(16'b0),
         .summed_output(normal_out)
     );
