@@ -30,6 +30,7 @@ module lab5_top(
     output wire [2:0] leds_rgb_1,
 
     input [2:0] btn,
+//    input [7:0] sw,
 
     /* 
     //VGA OUTPUT 

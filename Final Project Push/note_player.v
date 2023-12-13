@@ -4,12 +4,14 @@ module note_player(
     input play_enable,  // When high we play, when low we don't.
     input [5:0] note_to_load,  // The note to play
     input [5:0] duration_to_load,  // The duration of the note to play
+    input [1:0] stereo_side_to_load, // one hot signal that determines which side(s) the note should play on
     input load_new_note,  // Tells us when we have a new note to load
     output reg done_with_note,  // When we are done with the note this stays high.
     input beat,  // This is our 1/48th second beat
     input generate_next_sample,  // Tells us when the codec wants a new sample
     output [15:0] sample_out,  // Our sample output
-    output new_sample_ready  // Tells the codec when we've got a sample
+    output new_sample_ready,  // Tells the codec when we've got a sample
+    output [1:0] stereo_side_out // one hot signal that tells stereo conditioner what side to output on
 );
     reg [5:0] next;
     wire [5:0] loaded_duration;
@@ -53,6 +55,15 @@ module note_player(
         .en(load_new_note),
         .d(duration_to_load),
         .q(loaded_duration)
+    );
+    
+    // synchronize the stereo
+    dffre #(2) stereo_loader_latch(
+        .clk(clk),
+        .r(reset),
+        .en(load_new_note),
+        .d(stereo_side_to_load),
+        .q(stereo_side_out)
     );
 
     wire [5:0] count;

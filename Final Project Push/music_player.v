@@ -84,16 +84,19 @@ module music_player(
     wire note_1_load;
     wire [5:0] note_1_value;
     wire [5:0] note_1_duration;
+    wire [1:0] note_1_stereo;
     
     wire note_2_done;
     wire note_2_load;
     wire [5:0] note_2_value;
     wire [5:0] note_2_duration;
+    wire [1:0] note_2_stereo;
     
     wire note_3_done;
     wire note_3_load;
     wire [5:0] note_3_value;
     wire [5:0] note_3_duration;
+    wire [1:0] note_3_stereo;
     
     wire advance_time;
     note_arranger note_arranger(
@@ -108,16 +111,19 @@ module music_player(
         .note_1_load(note_1_load),
         .note_1(note_1_value),
         .note_1_duration(note_1_duration),
+        .note_1_stereo(note_1_stereo),
         
         .note_2_done(note_2_done),
         .note_2_load(note_2_load),
         .note_2(note_2_value),
         .note_2_duration(note_2_duration),
+        .note_2_stereo(note_2_stereo),
         
         .note_3_done(note_3_done),
         .note_3_load(note_3_load),
         .note_3(note_3_value),
         .note_3_duration(note_3_duration),
+        .note_3_stereo(note_3_stereo),
         
         .note_done(note_done),
         .advance_time(advance_time) 
@@ -131,50 +137,59 @@ module music_player(
     wire generate_next_sample;
     wire [15:0] note_1_sample;
     wire note_1_sample_ready;
+    wire [1:0] note_1_stereo_out;
     note_player note_player1(
         .clk(clk),
         .reset(reset),
         .play_enable(advance_time),
         .note_to_load(note_1_value),
         .duration_to_load(note_1_duration),
+        .stereo_side_to_load(note_1_stereo),
         .load_new_note(note_1_load),
         .done_with_note(note_1_done),
         .beat(beat),
         .generate_next_sample(generate_next_sample),
         .sample_out(note_1_sample),
-        .new_sample_ready(note_1_sample_ready)
+        .new_sample_ready(note_1_sample_ready),
+        .stereo_side_out(note_1_stereo_out)
     );
     
     wire [15:0] note_2_sample;
     wire note_2_sample_ready;
+    wire [1:0] note_2_stereo_out;
     note_player note_player2(
         .clk(clk),
         .reset(reset),
         .play_enable(advance_time),
         .note_to_load(note_2_value),
         .duration_to_load(note_2_duration),
+        .stereo_side_to_load(note_2_stereo),
         .load_new_note(note_2_load),
         .done_with_note(note_2_done),
         .beat(beat),
         .generate_next_sample(generate_next_sample),
         .sample_out(note_2_sample),
-        .new_sample_ready(note_2_sample_ready)
+        .new_sample_ready(note_2_sample_ready),
+        .stereo_side_out(note_2_stereo_out)
     );
     
     wire [15:0] note_3_sample;
     wire note_3_sample_ready;
+    wire [1:0] note_3_stereo_out;
     note_player note_player3(
         .clk(clk),
         .reset(reset),
         .play_enable(advance_time),
         .note_to_load(note_3_value),
         .duration_to_load(note_3_duration),
+        .stereo_side_to_load(note_3_stereo),
         .load_new_note(note_3_load),
         .done_with_note(note_3_done),
         .beat(beat),
         .generate_next_sample(generate_next_sample),
         .sample_out(note_3_sample),
-        .new_sample_ready(note_3_sample_ready)
+        .new_sample_ready(note_3_sample_ready),
+        .stereo_side_out(note_3_stereo_out)
     );
       
 //   
