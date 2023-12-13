@@ -10,8 +10,8 @@
 
 `define TEXT_X_LOC 128
 `define LINE_X_LOC 190
-`define FPA_TEXT_Y_LOC_DIV_32 2 // 64 absolute
-`define CURRENT_TEXT_Y_LOC_DIV_32 12 // 192 absolute
+`define FPA_TEXT_Y_LOC_DIV_32 12 // 64 absolute
+`define SYMBOLS_TEXT_Y_LOC_DIV_32 2 // 192 absolute
 `define FEATURES_TEXT_Y_LOC_DIV_32 14 // 288 absolute
 `define LINE_Y_LOC  0
 `define LINE_Y_WIDTH 3 
@@ -30,9 +30,16 @@ module fpa_vga_driver(
     
     // new inputs from angelina
 
-    input [5:0] input_note, // Current note index
-    input [5:0] note_duration, // Previous note index
+    input [5:0] input_note1, // Current note index
+    input [5:0] note_duration1, // Previous note index
+    input [5:0] input_note2, // Current note index
+    input [5:0] note_duration2, // Previous note index
+    input [5:0] input_note3, // Current note index
+    input [5:0] note_duration3, // Previous note index
     input stereo_on, harmonics_on, overtones_on, // Feature flags
+    
+    input next_button,
+    input play_button,
 
     output wire [5:0] vga_rgb
 
@@ -49,99 +56,169 @@ module fpa_vga_driver(
     // angelina added
     reg [5:0] next_timer;
     reg [5:0] next_current_note;
-    wire [5:0] current_note, current_duration, timer, previous_note;
+    wire [5:0] current_note1, current_duration1, timer, previous_note1, previous_note2, previous_note3;
     reg reset_timer;
-    reg [11:0] prev_note_chars, cur_note_chars;
-    wire timer_expired = (timer == note_duration);
+    reg [11:0] prev_note1_chars, cur_note1_chars, prev_note2_chars, cur_note2_chars, prev_note3_chars, cur_note3_chars;
+    wire timer_expired = (timer == note_duration1);
+    assign previous_note1 = input_note1;
+    assign previous_note2 = input_note2;
+    assign previous_note3 = input_note3;
+//    always @(*) begin
+//        reset_timer = 0;
+//        next_timer = timer + 1'b1;
+//        next_current_note = current_note;
 
-    always @(*) begin
-        reset_timer = 0;
-        next_timer = timer + 1'b1;
-        next_current_note = current_note;
-
-        if (input_note != current_note) begin
-            reset_timer = 1;
-            next_current_note = input_note;
-        end else if (timer_expired) begin
-            reset_timer = 1;
-            next_current_note = 6'd0; // Representing no note or rest
-        end
-    end
+//        if (current_note1 != current_note1) begin
+//            reset_timer = 1;
+//            next_current_note = current_note1;
+//        end else if (timer_expired) begin
+//            reset_timer = 1;
+//            next_current_note = 6'd0; // Representing no note or rest
+//        end
+//    end
 
     wire [`log2NUM_COLS-1:0] XPos_offset = XPos - `TEXT_X_LOC;
 
-    function [11:0] get_note_chars;
-        input [5:0] note_index; 
+    function [5:0] get_note_chars;
+        input [5:0] input_note; 
         begin
-            case (note_index)
-                6'd1 : get_note_chars = {6'd1, 6'd01};  // "1A"
-                6'd2 : get_note_chars = {6'd1, 6'd01};  // "1A#Bb"
-                6'd3 : get_note_chars = {6'd1, 6'd02};  // "1B"
-                6'd4 : get_note_chars = {6'd1, 6'd03};  // "1C"
-                6'd5 : get_note_chars = {6'd1, 6'd03};  // "1C#Db"
-                6'd6 : get_note_chars = {6'd1, 6'd04};  // "1D"
-                6'd7 : get_note_chars = {6'd1, 6'd04};  // "1D#Eb"
-                6'd8 : get_note_chars = {6'd1, 6'd05};  // "1E"
-                6'd9 : get_note_chars = {6'd1, 6'd06};  // "1F"
-                6'd10: get_note_chars = {6'd1, 6'd06};  // "1F#Gb"
-                6'd11: get_note_chars = {6'd1, 6'd07};  // "1G"
-                6'd12: get_note_chars = {6'd1, 6'd07};  // "1G#Ab"
-                6'd13: get_note_chars = {6'd2, 6'd01};  // "2A"
-                6'd14: get_note_chars = {6'd2, 6'd01};  // "2A#Bb"
-                6'd15: get_note_chars = {6'd2, 6'd02};  // "2B"
-                6'd16: get_note_chars = {6'd2, 6'd03};  // "2C"
-                6'd17: get_note_chars = {6'd2, 6'd03};  // "2C#Db"
-                6'd18: get_note_chars = {6'd2, 6'd04};  // "2D"
-                6'd19: get_note_chars = {6'd2, 6'd04};  // "2D#Eb"
-                6'd20: get_note_chars = {6'd2, 6'd05};  // "2E"
-                6'd21: get_note_chars = {6'd2, 6'd06};  // "2F"
-                6'd22: get_note_chars = {6'd2, 6'd06};  // "2F#Gb"
-                6'd23: get_note_chars = {6'd2, 6'd07};  // "2G"
-                6'd24: get_note_chars = {6'd2, 6'd07};  // "2G#Ab"
-                6'd25: get_note_chars = {6'd3, 6'd01};  // "3A"
-                6'd26: get_note_chars = {6'd3, 6'd01};  // "3A#Bb"
-                6'd27: get_note_chars = {6'd3, 6'd02};  // "3B"
-                6'd28: get_note_chars = {6'd3, 6'd03};  // "3C"
-                6'd29: get_note_chars = {6'd3, 6'd03};  // "3C#Db"
-                6'd30: get_note_chars = {6'd3, 6'd04};  // "3D"
-                6'd31: get_note_chars = {6'd3, 6'd04};  // "3D#Eb"
-                6'd32: get_note_chars = {6'd3, 6'd05};  // "3E"
-                6'd33: get_note_chars = {6'd3, 6'd06};  // "3F"
-                6'd34: get_note_chars = {6'd3, 6'd06};  // "3F#Gb"
-                6'd35: get_note_chars = {6'd3, 6'd07};  // "3G"
-                6'd36: get_note_chars = {6'd3, 6'd07};  // "3G#Ab"
-                6'd37: get_note_chars = {6'd4, 6'd01};  // "4A"
-                6'd38: get_note_chars = {6'd4, 6'd01};  // "4A#Bb"
-                6'd39: get_note_chars = {6'd4, 6'd02};  // "4B"
-                6'd40: get_note_chars = {6'd4, 6'd03};  // "4C"
-                6'd41: get_note_chars = {6'd4, 6'd03};  // "4C#Db"
-                6'd42: get_note_chars = {6'd4, 6'd04};  // "4D"
-                6'd43: get_note_chars = {6'd4, 6'd04};  // "4D#Eb"
-                6'd44: get_note_chars = {6'd4, 6'd05};  // "4E"
-                6'd45: get_note_chars = {6'd4, 6'd06};  // "4F"
-                6'd46: get_note_chars = {6'd4, 6'd06};  // "4F#Gb"
-                6'd47: get_note_chars = {6'd4, 6'd07};  // "4G"
-                6'd48: get_note_chars = {6'd4, 6'd07};  // "4G#Ab"
-                6'd49: get_note_chars = {6'd5, 6'd01};  // "5A"
-                6'd50: get_note_chars = {6'd5, 6'd01};  // "5A#Bb"
-                6'd51: get_note_chars = {6'd5, 6'd02};  // "5B"
-                6'd52: get_note_chars = {6'd5, 6'd03};  // "5C"
-                6'd53: get_note_chars = {6'd5, 6'd03};  // "5C#Db"
-                6'd54: get_note_chars = {6'd5, 6'd04};  // "5D"
-                6'd55: get_note_chars = {6'd5, 6'd04};  // "5D#Eb"
-                6'd56: get_note_chars = {6'd5, 6'd05};  // "5E"
-                6'd57: get_note_chars = {6'd5, 6'd06};  // "5F"
-                6'd58: get_note_chars = {6'd5, 6'd06};  // "5F#Gb"
-                6'd59: get_note_chars = {6'd5, 6'd07};  // "5G"
-                6'd60: get_note_chars = {6'd5, 6'd07};  // "5G#Ab"
-                6'd61: get_note_chars = {6'd6, 6'd01};  // "6A"
-                6'd62: get_note_chars = {6'd6, 6'd01};  // "6A#Bb"
-                6'd63: get_note_chars = {6'd6, 6'd02};  // "6B"
+            case (input_note)
+                6'd1 : get_note_chars = 6'd01;  // "1A"
+                6'd2 : get_note_chars = 6'd01;  // "1A#Bb"
+                6'd3 : get_note_chars = 6'd02;  // "1B"
+                6'd4 : get_note_chars = 6'd03;  // "1C"
+                6'd5 : get_note_chars = 6'd03;  // "1C#Db"
+                6'd6 : get_note_chars = 6'd04;  // "1D"
+                6'd7 : get_note_chars = 6'd04;  // "1D#Eb"
+                6'd8 : get_note_chars = 6'd05;  // "1E"
+                6'd9 : get_note_chars = 6'd06;  // "1F"
+                6'd10: get_note_chars = 6'd06;  // "1F#Gb"
+                6'd11: get_note_chars = 6'd07;  // "1G"
+                6'd12: get_note_chars = 6'd07;  // "1G#Ab"
+                6'd13: get_note_chars = 6'd01;  // "2A"
+                6'd14: get_note_chars = 6'd01;  // "2A#Bb"
+                6'd15: get_note_chars = 6'd02;  // "2B"
+                6'd16: get_note_chars = 6'd03;  // "2C"
+                6'd17: get_note_chars = 6'd03;  // "2C#Db"
+                6'd18: get_note_chars = 6'd04;  // "2D"
+                6'd19: get_note_chars = 6'd04;  // "2D#Eb"
+                6'd20: get_note_chars = 6'd05;  // "2E"
+                6'd21: get_note_chars = 6'd06;  // "2F"
+                6'd22: get_note_chars = 6'd06;  // "2F#Gb"
+                6'd23: get_note_chars = 6'd07;  // "2G"
+                6'd24: get_note_chars = 6'd07;  // "2G#Ab"
+                6'd25: get_note_chars = 6'd01;  // "3A"
+                6'd26: get_note_chars = 6'd01;  // "3A#Bb"
+                6'd27: get_note_chars = 6'd02;  // "3B"
+                6'd28: get_note_chars = 6'd03;  // "3C"
+                6'd29: get_note_chars = 6'd03;  // "3C#Db"
+                6'd30: get_note_chars = 6'd04;  // "3D"
+                6'd31: get_note_chars = 6'd04;  // "3D#Eb"
+                6'd32: get_note_chars = 6'd05;  // "3E"
+                6'd33: get_note_chars = 6'd06;  // "3F"
+                6'd34: get_note_chars = 6'd06;  // "3F#Gb"
+                6'd35: get_note_chars = 6'd07;  // "3G"
+                6'd36: get_note_chars = 6'd07;  // "3G#Ab"
+                6'd37: get_note_chars = 6'd01;  // "4A"
+                6'd38: get_note_chars = 6'd01;  // "4A#Bb"
+                6'd39: get_note_chars = 6'd02;  // "4B"
+                6'd40: get_note_chars = 6'd03;  // "4C"
+                6'd41: get_note_chars = 6'd03;  // "4C#Db"
+                6'd42: get_note_chars = 6'd04;  // "4D"
+                6'd43: get_note_chars = 6'd04;  // "4D#Eb"
+                6'd44: get_note_chars = 6'd05;  // "4E"
+                6'd45: get_note_chars = 6'd06;  // "4F"
+                6'd46: get_note_chars = 6'd06;  // "4F#Gb"
+                6'd47: get_note_chars = 6'd07;  // "4G"
+                6'd48: get_note_chars = 6'd07;  // "4G#Ab"
+                6'd49: get_note_chars = 6'd01;  // "5A"
+                6'd50: get_note_chars = 6'd01;  // "5A#Bb"
+                6'd51: get_note_chars = 6'd02;  // "5B"
+                6'd52: get_note_chars = 6'd03;  // "5C"
+                6'd53: get_note_chars = 6'd03;  // "5C#Db"
+                6'd54: get_note_chars = 6'd04;  // "5D"
+                6'd55: get_note_chars = 6'd04;  // "5D#Eb"
+                6'd56: get_note_chars = 6'd05;  // "5E"
+                6'd57: get_note_chars = 6'd06;  // "5F"
+                6'd58: get_note_chars = 6'd06;  // "5F#Gb"
+                6'd59: get_note_chars = 6'd07;  // "5G"
+                6'd60: get_note_chars = 6'd07;  // "5G#Ab"
+                6'd61: get_note_chars = 6'd01;  // "6A"
+                6'd62: get_note_chars = 6'd01;  // "6A#Bb"
+                6'd63: get_note_chars = 6'd02;  // "6B"
+                6'd0 : get_note_chars = 6'd00; // "rest"
+              default: get_note_chars = 6'd01;  // edge case for unknown note
+       endcase
+   end
+endfunction      
+/*                6'd1 : get_note_chars = {6'd01, 6'd01};  // "1A"
+                6'd2 : get_note_chars = {6'd01, 6'd01};  // "1A#Bb"
+                6'd3 : get_note_chars = {6'd01, 6'd02};  // "1B"
+                6'd4 : get_note_chars = {6'd01, 6'd03};  // "1C"
+                6'd5 : get_note_chars = {6'd01, 6'd03};  // "1C#Db"
+                6'd6 : get_note_chars = {6'd01, 6'd04};  // "1D"
+                6'd7 : get_note_chars = {6'd01, 6'd04};  // "1D#Eb"
+                6'd8 : get_note_chars = {6'd01, 6'd05};  // "1E"
+                6'd9 : get_note_chars = {6'd01, 6'd06};  // "1F"
+                6'd10: get_note_chars = {6'd01, 6'd06};  // "1F#Gb"
+                6'd11: get_note_chars = {6'd01, 6'd07};  // "1G"
+                6'd12: get_note_chars = {6'd01, 6'd07};  // "1G#Ab"
+                6'd13: get_note_chars = {6'd02, 6'd01};  // "2A"
+                6'd14: get_note_chars = {6'd02, 6'd01};  // "2A#Bb"
+                6'd15: get_note_chars = {6'd02, 6'd02};  // "2B"
+                6'd16: get_note_chars = {6'd02, 6'd03};  // "2C"
+                6'd17: get_note_chars = {6'd02, 6'd03};  // "2C#Db"
+                6'd18: get_note_chars = {6'd02, 6'd04};  // "2D"
+                6'd19: get_note_chars = {6'd02, 6'd04};  // "2D#Eb"
+                6'd20: get_note_chars = {6'd02, 6'd05};  // "2E"
+                6'd21: get_note_chars = {6'd02, 6'd06};  // "2F"
+                6'd22: get_note_chars = {6'd02, 6'd06};  // "2F#Gb"
+                6'd23: get_note_chars = {6'd02, 6'd07};  // "2G"
+                6'd24: get_note_chars = {6'd02, 6'd07};  // "2G#Ab"
+                6'd25: get_note_chars = {6'd03, 6'd01};  // "3A"
+                6'd26: get_note_chars = {6'd03, 6'd01};  // "3A#Bb"
+                6'd27: get_note_chars = {6'd03, 6'd02};  // "3B"
+                6'd28: get_note_chars = {6'd03, 6'd03};  // "3C"
+                6'd29: get_note_chars = {6'd03, 6'd03};  // "3C#Db"
+                6'd30: get_note_chars = {6'd03, 6'd04};  // "3D"
+                6'd31: get_note_chars = {6'd03, 6'd04};  // "3D#Eb"
+                6'd32: get_note_chars = {6'd03, 6'd05};  // "3E"
+                6'd33: get_note_chars = {6'd03, 6'd06};  // "3F"
+                6'd34: get_note_chars = {6'd03, 6'd06};  // "3F#Gb"
+                6'd35: get_note_chars = {6'd03, 6'd07};  // "3G"
+                6'd36: get_note_chars = {6'd03, 6'd07};  // "3G#Ab"
+                6'd37: get_note_chars = {6'd04, 6'd01};  // "4A"
+                6'd38: get_note_chars = {6'd04, 6'd01};  // "4A#Bb"
+                6'd39: get_note_chars = {6'd04, 6'd02};  // "4B"
+                6'd40: get_note_chars = {6'd04, 6'd03};  // "4C"
+                6'd41: get_note_chars = {6'd04, 6'd03};  // "4C#Db"
+                6'd42: get_note_chars = {6'd04, 6'd04};  // "4D"
+                6'd43: get_note_chars = {6'd04, 6'd04};  // "4D#Eb"
+                6'd44: get_note_chars = {6'd04, 6'd05};  // "4E"
+                6'd45: get_note_chars = {6'd04, 6'd06};  // "4F"
+                6'd46: get_note_chars = {6'd04, 6'd06};  // "4F#Gb"
+                6'd47: get_note_chars = {6'd04, 6'd07};  // "4G"
+                6'd48: get_note_chars = {6'd04, 6'd07};  // "4G#Ab"
+                6'd49: get_note_chars = {6'd05, 6'd01};  // "5A"
+                6'd50: get_note_chars = {6'd05, 6'd01};  // "5A#Bb"
+                6'd51: get_note_chars = {6'd05, 6'd02};  // "5B"
+                6'd52: get_note_chars = {6'd05, 6'd03};  // "5C"
+                6'd53: get_note_chars = {6'd05, 6'd03};  // "5C#Db"
+                6'd54: get_note_chars = {6'd05, 6'd04};  // "5D"
+                6'd55: get_note_chars = {6'd05, 6'd04};  // "5D#Eb"
+                6'd56: get_note_chars = {6'd05, 6'd05};  // "5E"
+                6'd57: get_note_chars = {6'd05, 6'd06};  // "5F"
+                6'd58: get_note_chars = {6'd05, 6'd06};  // "5F#Gb"
+                6'd59: get_note_chars = {6'd05, 6'd07};  // "5G"
+                6'd60: get_note_chars = {6'd05, 6'd07};  // "5G#Ab"
+                6'd61: get_note_chars = {6'd06, 6'd01};  // "6A"
+                6'd62: get_note_chars = {6'd06, 6'd01};  // "6A#Bb"
+                6'd63: get_note_chars = {6'd06, 6'd02};  // "6B"
                 6'd0 : get_note_chars = {6'd72, 6'd00}; // "rest"
-              default: get_note_chars = {6'd0, 6'd0};  // edge case for unknown note
-            endcase
-        end
-    endfunction
+              default: get_note_chars = {6'd00, 6'd0};  // edge case for unknown note
+            endcase*/
+//        end
+//    endfunction
 
 
 //=============================================================================
@@ -151,32 +228,57 @@ module fpa_vga_driver(
     always @* begin
         //char_selection = 6'b100000;
         //char_color = 6'b111111;  // RRBBGG
-        prev_note_chars = get_note_chars(previous_note);
-
+        prev_note1_chars = get_note_chars(previous_note1);
+        cur_note2_chars = get_note_chars(input_note1);
+        
         case (YPos[`log2NUM_ROWS-1:5])
             // First row of text
+            `SYMBOLS_TEXT_Y_LOC_DIV_32: begin
+            char_color = 6'b01111; // Set the color for the text
+    
+                case (XPos_offset[`log2NUM_COLS-1:5])
+                    0: begin
+                        if (play_button) begin
+                        char_selection = 6'd61;
+                    end else begin
+                        char_selection = 6'd62;
+                    end
+                    end
+                    20: begin
+                        if(next_button) begin
+                        char_selection = 6'd63;
+                    end else begin
+                    char_selection = 6'd00; 
+                    end 
+                    end
+                    default: char_selection = 6'b100000;
+                endcase
+       end
+
             `FPA_TEXT_Y_LOC_DIV_32: begin
-               char_color = 6'b101111;
+               char_color = 6'b01111;
                case (XPos_offset[`log2NUM_COLS-1:5])
                 0: char_selection = 6'd14;  // 'N'
                 1: char_selection = 6'd15;  // 'O'
                 2: char_selection = 6'd20;   // 'T' (5th letter)
-                3: char_selection = 6'd22;  // 'E' (22nd letter)
-                4: char_selection = 6'd45;  // 'S'
+                3: char_selection = 6'd05;  // 'E' (22nd letter)
+                4: char_selection = 6'd19;  // 'S'
                 5: char_selection = 6'd32;  // ' ' (space)
-                6: char_selection = prev_note_chars[11:6]; // First character of the note
-                7: char_selection = prev_note_chars[5:0];  // Second character of the note
-                8: char_selection = 6'd33;  // ' ' (space)
-                9: char_selection = 6'd32;  // ' ' (space)
-                10: char_selection = cur_note_chars[11:6]; // First character of the note
-                11: char_selection = cur_note_chars[5:0];  // Second character of the note
-                12: char_selection = 6'd32; //space
-                13: char_selection = cur_note_chars[11:6]; // First character of the note
-                14: char_selection = cur_note_chars[5:0];  // Second character of the note
+                6: char_selection = 6'd33;  // ' ' (space)
+                7: char_selection = prev_note1_chars[5:0]; // First character of the note
+                8: char_selection = prev_note2_chars[5:0];  // Second character of the note
+                9: char_selection = prev_note3_chars[5:0];
+                10: char_selection = 6'd32;  // ' ' (space)
+                11: char_selection = cur_note1_chars[5:0]; // First character of the note
+                12: char_selection = cur_note2_chars[5:0];  // Second character of the note
+                13: char_selection = cur_note3_chars[5:0];
+                14: char_selection = 6'd32; //space
+                15: char_selection = cur_note1_chars[5:0]; // First character of the note
+                16: char_selection = cur_note2_chars[5:0];  // Second character of the note
+                17: char_selection = cur_note3_chars[5:0];
                 default: char_selection = 6'b100000; // Blank for other positions
             endcase
       end
-
 //             char_color = 6'b101010;
 //             case (XPos_offset[`log2NUM_COLS-1:5])
 //             0: char_selection = 6'd16;  // 'P' (16th letter)

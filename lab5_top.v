@@ -119,8 +119,8 @@ module lab5_top(
     wire new_frame;
     wire [15:0] codec_sample, flopped_sample;
     wire new_sample, flopped_new_sample;
-    wire [5:0] current_note, note_duration;
-    wire [5:0] note_q, duration_q;
+    wire [5:0] current_note1, note_duration1, current_note2, note_duration2, current_note3, note_duration3;
+    //wire [5:0] note_q, duration_q;
     music_player #(.BEAT_COUNT(BEAT_COUNT)) music_player(
         .clk(clk_100),
         .reset(reset),
@@ -129,8 +129,12 @@ module lab5_top(
         .new_frame(new_frame), 
         .sample_out(codec_sample),
         .new_sample_generated(new_sample),
-        .current_note(current_note),
-        .current_note_duration(note_duration)
+        .current_note_1(current_note1),
+        .current_note_duration_1(note_duration1),
+        .current_note_2(current_note2),
+        .current_note_duration_2(note_duration2),
+        .current_note_3(current_note3),
+        .current_note_duration_3(note_duration3)
     );
     dff #(.WIDTH(17)) sample_reg (
         .clk(clk_100),
@@ -251,6 +255,7 @@ module lab5_top(
    
     wire stereo_on, harmonics_on, overtones_on;
     assign stereo_on = 1;
+    assign harmonics_on = 1;
    // VGA Colors
 //   assign r = {2{rgb_q [5:4]}};
 //   assign g = {2{rgb_q [3:2]}};
@@ -301,18 +306,38 @@ module lab5_top(
 //        .d (note_duration), 
 //        .q (duration_q)
 //    );
-	wire [5:0] note_duration_d1, note_duration_d2, note_duration_d3;
-    wire [5:0] current_note_d1, current_note_d2, current_note_d3;
+	wire [5:0] note_duration1_d1, note_duration1_d2, note_duration1_d3,note_duration2_d1, note_duration2_d2, note_duration2_d3, note_duration3_d1, note_duration3_d2, note_duration3_d3;
+    wire [5:0] current_note1_d1, current_note1_d2, current_note1_d3, current_note2_d1, current_note2_d2, current_note2_d3,current_note3_d1, current_note3_d2, current_note3_d3;
     
     // Delay for note_duration
-    dff #(.WIDTH(6)) delay_note_duration_1 (.clk(clk_100), .d(note_duration), .q(note_duration_d1));
-    dff #(.WIDTH(6)) delay_note_duration_2 (.clk(clk_100), .d(note_duration_d1), .q(note_duration_d2));
-    dff #(.WIDTH(6)) delay_note_duration_3 (.clk(clk_100), .d(note_duration_d2), .q(note_duration_d3));
+    dff #(.WIDTH(6)) delay_note1_duration_1 (.clk(clk_100), .d(note_duration1), .q(note_duration1_d1));
+    dff #(.WIDTH(6)) delay_note1_duration_2 (.clk(clk_100), .d(note_duration1_d1), .q(note_duration1_d2));
+    dff #(.WIDTH(6)) delay_note1_duration_3 (.clk(clk_100), .d(note_duration1_d2), .q(note_duration1_d3));
     
     // Delay for current_note
-    dff #(.WIDTH(6)) delay_current_note_1 (.clk(clk_100), .d(current_note), .q(current_note_d1));
-    dff #(.WIDTH(6)) delay_current_note_2 (.clk(clk_100), .d(current_note_d1), .q(current_note_d2));
-    dff #(.WIDTH(6)) delay_current_note_3 (.clk(clk_100), .d(current_note_d2), .q(current_note_d3));
+    dff #(.WIDTH(6)) delay_current_note1_1 (.clk(clk_100), .d(current_note1), .q(current_note1_d1));
+    dff #(.WIDTH(6)) delay_current_note1_2 (.clk(clk_100), .d(current_note1_d1), .q(current_note2_d2));
+    dff #(.WIDTH(6)) delay_current_note1_3 (.clk(clk_100), .d(current_note2_d2), .q(current_note2_d3));
+
+    // Delay for note_duration
+    dff #(.WIDTH(6)) delay_note2_duration_1 (.clk(clk_100), .d(note_duration2), .q(note_duration1_d1));
+    dff #(.WIDTH(6)) delay_note2_duration_2 (.clk(clk_100), .d(note_duration2_d1), .q(note_duration1_d2));
+    dff #(.WIDTH(6)) delay_note2_duration_3 (.clk(clk_100), .d(note_duration2_d2), .q(note_duration1_d3));
+    
+    // Delay for current_note
+    dff #(.WIDTH(6)) delay_current_note2_1 (.clk(clk_100), .d(current_note2), .q(current_note2_d1));
+    dff #(.WIDTH(6)) delay_current_note2_2 (.clk(clk_100), .d(current_note2_d1), .q(current_note2_d2));
+    dff #(.WIDTH(6)) delay_current_note2_3 (.clk(clk_100), .d(current_note2_d2), .q(current_note2_d3));
+
+    // Delay for note_duration
+    dff #(.WIDTH(6)) delay_note3_duration_1 (.clk(clk_100), .d(note_duration3), .q(note_duration1_d1));
+    dff #(.WIDTH(6)) delay_note3_duration_2 (.clk(clk_100), .d(note_duration3_d1), .q(note_duration1_d2));
+    dff #(.WIDTH(6)) delay_note3_duration_3 (.clk(clk_100), .d(note_duration3_d2), .q(note_duration1_d3));
+    
+    // Delay for current_note
+    dff #(.WIDTH(6)) delay_current_note3_1 (.clk(clk_100), .d(current_note3), .q(current_note3_d1));
+    dff #(.WIDTH(6)) delay_current_note3_2 (.clk(clk_100), .d(current_note3_d1), .q(current_note3_d2));
+    dff #(.WIDTH(6)) delay_current_note3_3 (.clk(clk_100), .d(current_note2_d2), .q(current_note3_d3));
 
     // Display Driver
     fpa_vga_driver fpa_vga (
@@ -320,8 +345,14 @@ module lab5_top(
         .XPos    (x_q), // x_q
         .YPos    (y_q),
 
-	   .input_note(current_note_d3),
-	   .note_duration(note_duration_d3),
+	   .input_note1(current_note1_d3),
+	   .note_duration1(note_duration1_d3),
+	   .input_note2(current_note2_d3),
+	   .note_duration2(note_duration2_d3),
+	   .input_note3(current_note3_d3),
+	   .note_duration3(note_duration3_d3),
+	   .play_button(play),
+	   .next_button(next),
 	   .stereo_on(stereo_on),
 	   .harmonics_on(harmonics_on),
 	   .overtones_on(overtones_on),

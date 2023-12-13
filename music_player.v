@@ -24,10 +24,12 @@ module music_player(
     // Our final output sample to the codec. This needs to be synced to
     // new_frame.
     output wire [15:0] sample_out,
-    output wire [15:0] sample_left,
-    output wire [15:0] sample_right,
-    output wire [5:0] current_note,
-    output wire [5:0] current_note_duration
+    output wire [5:0] current_note_1,
+    output wire [5:0] current_note_duration_1,
+    output wire [5:0] current_note_2,
+    output wire [5:0] current_note_duration_2,
+    output wire [5:0] current_note_3,
+    output wire [5:0] current_note_duration_3
 );
     // The BEAT_COUNT is parameterized so you can reduce this in simulation.
     // If you reduce this to 100 your simulation will be 10x faster.
@@ -42,7 +44,7 @@ module music_player(
 //   we don't need to reset any state in the note_player. If we do it may make
 //   a pop when it resets the output sample.
 //
- 
+    
     wire play;
     wire reset_player;
     wire [1:0] current_song;
@@ -132,95 +134,83 @@ module music_player(
 //      Note Players
 //  ****************************************************************************
 //  
-    wire [3:0] overtones = 4'b1111;
     wire generate_next_sample;
-    wire [16:0] note_1_sample;
+    wire [15:0] note_1_sample;
     wire note_1_sample_ready;
     note_player note_player1(
         .clk(clk),
         .reset(reset),
         .play_enable(advance_time),
         .note_to_load(note_1_value),
-        .input_duration(note_1_duration),
+        .duration_to_load(note_1_duration),
         .load_new_note(note_1_load),
         .done_with_note(note_1_done),
         .beat(beat),
         .generate_next_sample(generate_next_sample),
         .sample_out(note_1_sample),
-        .new_sample_ready(note_1_sample_ready),
-        .overtones(overtones)
+        .new_sample_ready(note_1_sample_ready)
     );
     
-    wire [16:0] note_2_sample;
+    wire [15:0] note_2_sample;
     wire note_2_sample_ready;
     note_player note_player2(
         .clk(clk),
         .reset(reset),
         .play_enable(advance_time),
         .note_to_load(note_2_value),
-        .input_duration(note_2_duration),
+        .duration_to_load(note_2_duration),
         .load_new_note(note_2_load),
         .done_with_note(note_2_done),
         .beat(beat),
         .generate_next_sample(generate_next_sample),
         .sample_out(note_2_sample),
-        .new_sample_ready(note_2_sample_ready),
-        .overtones(overtones)
+        .new_sample_ready(note_2_sample_ready)
     );
     
-    wire [16:0] note_3_sample;
+    wire [15:0] note_3_sample;
     wire note_3_sample_ready;
     note_player note_player3(
         .clk(clk),
         .reset(reset),
         .play_enable(advance_time),
         .note_to_load(note_3_value),
-        .input_duration(note_3_duration),
+        .duration_to_load(note_3_duration),
         .load_new_note(note_3_load),
         .done_with_note(note_3_done),
         .beat(beat),
         .generate_next_sample(generate_next_sample),
         .sample_out(note_3_sample),
-        .new_sample_ready(note_3_sample_ready),
-        .overtones(overtones)
+        .new_sample_ready(note_3_sample_ready)
     );
-      
+
+    wire new_note_available_1, new_note_available_2, new_note_available_3;
+    assign new_note_available_1 = note_1_sample_ready;
+    assign new_note_available_2 = note_2_sample_ready;
+    assign new_note_available_3 = note_3_sample_ready;
+    
+    wire [5:0] next_current_note_1, next_current_note_duration_1, next_current_note_2, next_current_note_duration_2, next_current_note_3, next_current_note_duration_3; 
+
+    dffre #(.WIDTH(6)) dff_current_note1 (.clk(clk), .r(reset), .en(new_note_available_1), .d(next_current_note_1), .q(current_note_1));
+    dffre #(.WIDTH(6)) dff_current_duration1 (.clk(clk), .r(reset), .en(new_note_available_1), .d(next_current_note_duration_1), .q(current_note_duration_1));
+    dffre #(.WIDTH(6)) dff_current_note2 (.clk(clk), .r(reset), .en(new_note_available_2), .d(next_current_note_2), .q(current_note_2));
+    dffre #(.WIDTH(6)) dff_current_duration2 (.clk(clk), .r(reset), .en(new_note_available_2), .d(next_current_note_duration_2), .q(current_note_duration_2));
+    dffre #(.WIDTH(6)) dff_current_note3 (.clk(clk), .r(reset), .en(new_note_available_3), .d(next_current_note_3), .q(current_note_3));
+    dffre #(.WIDTH(6)) dff_current_duration3 (.clk(clk), .r(reset), .en(new_note_available_3), .d(next_current_note_duration_3), .q(current_note_duration_3));
 //   
 //  ****************************************************************************
 //      Sample Sum
 //  ****************************************************************************
 // 
-//    wire [15:0] note_sample;
-//    sample_sum summator(
-//        .toneOneSample(note_1_sample), 
-//        .toneTwoSample(note_2_sample),
-//        .toneThreeSample(note_3_sample),
-//        .toneFourSample(16'd0),
-//        .summed_output(note_sample)
-//    );
-
-//    sample_sum sum_left(
-//        .toneOneSample(note_1_sample),
-//        .toneTwoSample(note_2_sample),
-//        .toneThreeSample(note_3_sample),
-//        .toneFourSample(16'b0), // only need 3 channels
-//        .summed_output(note_sample)
-//    );
-    
-//   
-//  ****************************************************************************
-//      Stereo Conditioner
-//  ****************************************************************************
-  
-    stereo_conditioner stereo_heart(
-        .note_data_a(note_1_sample),
-        .note_data_b(note_2_sample),
-        .note_data_c(note_3_sample),
-        .sample_l(sample_left),
-        .sample_r(sample_right)
+    wire [15:0] note_sample;
+    sample_sum summator(
+        .toneOneSample(note_1_sample), 
+        .toneTwoSample(note_2_sample),
+        .toneThreeSample(note_3_sample),
+        .toneFourSample(16'd0),
+        .summed_output(note_sample)
     );
-    
-   
+
+//   
 //  ****************************************************************************
 //      Beat Generator
 //  ****************************************************************************
@@ -241,13 +231,10 @@ module music_player(
 //  ****************************************************************************
 //  
     assign new_sample_generated = generate_next_sample;
-    assign current_note = note_1_value; // delay w three flops
-    assign current_note_duration = note_1_duration[5:0];
-
     codec_conditioner codec_conditioner(
         .clk(clk),
         .reset(reset),
-        .new_sample_in(sample_left),
+        .new_sample_in(note_sample),
         .latch_new_sample_in(note_1_sample_ready),
         .generate_next_sample(generate_next_sample),
         .new_frame(new_frame),
