@@ -1,0 +1,12 @@
+#-----------------------------------------------------------
+# Vivado v2018.3 (64-bit)
+# SW Build 2405991 on Thu Dec  6 23:38:27 MST 2018
+# IP Build 2404404 on Fri Dec  7 01:43:56 MST 2018
+# Start of session at: Mon Jun 22 12:54:07 2020
+# Process ID: 23556
+# Current directory: c:/Users/parimalp/Downloads/VivadoIP-master/VivadoIP-master/hdmi_tx_1.0/example_designs/BlackboardRevD
+# Command line: vivado.exe -mode batch -source tcl/create_project.tcl -tclargs --project_dir ./hdmi_example --project_name example
+# Log file: c:/Users/parimalp/Downloads/VivadoIP-master/VivadoIP-master/hdmi_tx_1.0/example_designs/BlackboardRevD/vivado.log
+# Journal file: c:/Users/parimalp/Downloads/VivadoIP-master/VivadoIP-master/hdmi_tx_1.0/example_designs/BlackboardRevD\vivado.jou
+#-----------------------------------------------------------
+source tcl/create_project.tcl
